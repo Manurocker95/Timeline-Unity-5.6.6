@@ -4,7 +4,7 @@ using UnityEngine.Scripting;
 namespace UnityEngine.Playables
 {
 	// Token: 0x02000219 RID: 537
-	//[RequiredByNativeCode]
+	
 	public struct DSPFloatParameter
 	{
 		// Token: 0x0600232F RID: 9007 RVA: 0x0002882C File Offset: 0x00026A2C

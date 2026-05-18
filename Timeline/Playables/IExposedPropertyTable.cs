@@ -1,15 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace VirtualPhenix
+﻿namespace UnityEngine.Playables
 {
-    public interface IExposedPropertyTable2
+    public interface IExposedPropertyTable
     {
         void SetReferenceValue(PropertyName id, Object value);
-
         Object GetReferenceValue(PropertyName id, out bool idValid);
-
         void ClearReferenceValue(PropertyName id);
     }
 }

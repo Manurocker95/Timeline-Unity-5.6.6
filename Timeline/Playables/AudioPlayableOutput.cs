@@ -9,7 +9,7 @@ namespace UnityEngine.Playables
 	///   <para>Audio output for the PlayableGraph.  Defines how a Playable is connected to an AudioMixerGroup.</para>
 	/// </summary>
 	// Token: 0x0200021B RID: 539
-	[RequiredByNativeCode]
+	
 	public struct AudioPlayableOutput
 	{
 		/// <summary>
@@ -92,12 +92,12 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x06002349 RID: 9033
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern AudioMixerGroup InternalGetTarget(ref PlayableOutput output);
 
 		// Token: 0x0600234A RID: 9034
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void InternalSetTarget(ref PlayableOutput output, AudioMixerGroup target);
 

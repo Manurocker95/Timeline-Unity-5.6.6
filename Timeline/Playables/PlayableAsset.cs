@@ -7,7 +7,7 @@ namespace UnityEngine.Playables
 	///   <para>An base class for assets that can be used to instatiate a Playable at runtime.</para>
 	/// </summary>
 	// Token: 0x020000EA RID: 234
-	//[RequiredByNativeCode]
+	
 	[Serializable]
 	public abstract class PlayableAsset : ScriptableObject, IPlayableAsset
 	{
@@ -48,12 +48,10 @@ namespace UnityEngine.Playables
 			}
 		}
 
-		// Token: 0x060010E5 RID: 4325 RVA: 0x000169B0 File Offset: 0x00014BB0
-		internal unsafe void InternalGetDuration(IntPtr ptrToDouble)
-		{
-			double duration = this.duration;
-			double* ptr = (double*)ptrToDouble.ToPointer();
-			*ptr = duration;
-		}
-	}
+        // Token: 0x060010E5 RID: 4325 RVA: 0x000169B0 File Offset: 0x00014BB0
+        public virtual double GetDuration()
+        {
+            return duration;
+        }
+    }
 }

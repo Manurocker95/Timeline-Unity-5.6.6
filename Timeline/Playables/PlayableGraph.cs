@@ -2,16 +2,15 @@
 using System.Runtime.CompilerServices;
 using UnityEngine.Internal;
 using UnityEngine.Scripting;
-using VirtualPhenix;
 
 namespace UnityEngine.Playables
 {
-    /// <summary>
-    ///   <para>The PlayableGraph is used to manage PlayableHandle creation, destruction and connections.</para>
-    /// </summary>
-    // Token: 0x020000EC RID: 236
-    //[UsedByNativeCode]
-    public struct PlayableGraph
+	/// <summary>
+	///   <para>The PlayableGraph is used to manage PlayableHandle creation, destruction and connections.</para>
+	/// </summary>
+	// Token: 0x020000EC RID: 236
+	
+	public struct PlayableGraph
 	{
 		/// <summary>
 		///   <para>Returns true if the PlayableGraph has been properly constructed using PlayableGraph.CreateGraph and is not deleted.</para>
@@ -22,9 +21,9 @@ namespace UnityEngine.Playables
 			return PlayableGraph.IsValidInternal(ref this);
 		}
 
-        // Token: 0x060010E7 RID: 4327
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010E7 RID: 4327
+		
+		[MethodImpl(4096)]
 		private static extern bool IsValidInternal(ref PlayableGraph graph);
 
 		/// <summary>
@@ -41,9 +40,9 @@ namespace UnityEngine.Playables
 			return result;
 		}
 
-        // Token: 0x060010E9 RID: 4329
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010E9 RID: 4329
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalCreate(ref PlayableGraph graph);
 
 		/// <summary>
@@ -59,9 +58,9 @@ namespace UnityEngine.Playables
 			}
 		}
 
-        // Token: 0x060010EB RID: 4331
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010EB RID: 4331
+		
+		[MethodImpl(4096)]
 		internal static extern bool InternalIsDone(ref PlayableGraph graph);
 
 		/// <summary>
@@ -82,14 +81,14 @@ namespace UnityEngine.Playables
 			}
 		}
 
-        // Token: 0x060010EE RID: 4334
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
-		internal static extern object InternalGetResolver(ref PlayableGraph graph);
+		// Token: 0x060010EE RID: 4334
+		
+		[MethodImpl(4096)]
+		internal static extern IExposedPropertyTable InternalGetResolver(ref PlayableGraph graph);
 
-        // Token: 0x060010EF RID: 4335
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010EF RID: 4335
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalSetResolver(ref PlayableGraph graph, IExposedPropertyTable resolver);
 
 		/// <summary>
@@ -101,9 +100,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.InternalPlay(ref this);
 		}
 
-        // Token: 0x060010F1 RID: 4337
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010F1 RID: 4337
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalPlay(ref PlayableGraph graph);
 
 		/// <summary>
@@ -115,9 +114,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.InternalStop(ref this);
 		}
 
-        // Token: 0x060010F3 RID: 4339
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010F3 RID: 4339
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalStop(ref PlayableGraph graph);
 
 		/// <summary>
@@ -133,9 +132,9 @@ namespace UnityEngine.Playables
 			}
 		}
 
-        // Token: 0x060010F5 RID: 4341
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010F5 RID: 4341
+		
+		[MethodImpl(4096)]
 		internal static extern int InternalPlayableCount(ref PlayableGraph graph);
 
 		/// <summary>
@@ -158,9 +157,9 @@ namespace UnityEngine.Playables
 			return result;
 		}
 
-        // Token: 0x060010F7 RID: 4343
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010F7 RID: 4343
+		
+		[MethodImpl(4096)]
 		private static extern bool InternalCreateScriptOutput(ref PlayableGraph graph, string name, out PlayableOutput output);
 
 		/// <summary>
@@ -223,9 +222,9 @@ namespace UnityEngine.Playables
 			return PlayableGraph.INTERNAL_CALL_InternalCreatePlayable(ref graph, ref handle);
 		}
 
-        // Token: 0x060010FC RID: 4348
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010FC RID: 4348
+		
+		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalCreatePlayable(ref PlayableGraph graph, ref PlayableHandle handle);
 
 		/// <summary>
@@ -237,9 +236,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.DestroyInternal(ref this);
 		}
 
-        // Token: 0x060010FE RID: 4350
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x060010FE RID: 4350
+		
+		[MethodImpl(4096)]
 		private static extern void DestroyInternal(ref PlayableGraph graph);
 
 		/// <summary>
@@ -280,9 +279,9 @@ namespace UnityEngine.Playables
 			return PlayableGraph.INTERNAL_CALL_ConnectInternal(ref graph, ref source, sourceOutputPort, ref destination, destinationInputPort);
 		}
 
-        // Token: 0x06001102 RID: 4354
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001102 RID: 4354
+		
+		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_ConnectInternal(ref PlayableGraph graph, ref PlayableHandle source, int sourceOutputPort, ref PlayableHandle destination, int destinationInputPort);
 
 		/// <summary>
@@ -314,9 +313,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.INTERNAL_CALL_DisconnectInternal(ref graph, ref playable, inputPort);
 		}
 
-        // Token: 0x06001106 RID: 4358
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001106 RID: 4358
+		
+		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_DisconnectInternal(ref PlayableGraph graph, ref PlayableHandle playable, int inputPort);
 
 		/// <summary>
@@ -335,9 +334,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.INTERNAL_CALL_InternalDestroyPlayable(ref graph, ref playable);
 		}
 
-        // Token: 0x06001109 RID: 4361
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001109 RID: 4361
+		
+		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_InternalDestroyPlayable(ref PlayableGraph graph, ref PlayableHandle playable);
 
 		/// <summary>
@@ -350,9 +349,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.InternalDestroyOutput(ref this, ref output.m_Output);
 		}
 
-        // Token: 0x0600110B RID: 4363
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600110B RID: 4363
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalDestroyOutput(ref PlayableGraph graph, ref PlayableOutput output);
 
 		/// <summary>
@@ -371,9 +370,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.INTERNAL_CALL_InternalDestroySubgraph(ref graph, ref playable);
 		}
 
-        // Token: 0x0600110E RID: 4366
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600110E RID: 4366
+		
+		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_InternalDestroySubgraph(ref PlayableGraph graph, ref PlayableHandle playable);
 
 		// Token: 0x0600110F RID: 4367 RVA: 0x00016C6C File Offset: 0x00014E6C
@@ -394,9 +393,9 @@ namespace UnityEngine.Playables
 			PlayableGraph.InternalEvaluate(ref this, deltaTime);
 		}
 
-        // Token: 0x06001111 RID: 4369
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001111 RID: 4369
+		
+		[MethodImpl(4096)]
 		internal static extern void InternalEvaluate(ref PlayableGraph graph, float deltaTime);
 
 		/// <summary>
@@ -412,9 +411,9 @@ namespace UnityEngine.Playables
 			}
 		}
 
-        // Token: 0x06001113 RID: 4371
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001113 RID: 4371
+		
+		[MethodImpl(4096)]
 		internal static extern int InternalRootPlayableCount(ref PlayableGraph graph);
 
 		/// <summary>
@@ -436,7 +435,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x06001116 RID: 4374
-		//[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_InternalGetRootPlayable(int index, ref PlayableGraph graph, ref PlayableHandle handle);
 

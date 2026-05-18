@@ -4,37 +4,26 @@ using UnityEngine.Audio;
 using UnityEngine.Internal;
 using UnityEngine.Playables.Audio;
 using UnityEngine.Scripting;
-using UnityEngine.Experimental.Director;
-
-
 
 namespace UnityEngine.Playables
 {
-
-    /// <summary>
-    ///   <para>Extends PlayableGraph for Audio.</para>
-    /// </summary>
-    public static class AudioPlayableGraphExtensions
-    {
-        private static int s_NextId = 1;
-
-        // Comment: Generate a unique, non-zero IntPtr to simulate a native handle.
-        private static IntPtr NewPtr()
-        {
-            // Keep within 31-bit positive range for safety in old runtimes.
-            int id = s_NextId++;
-            return new IntPtr(id & 0x3FFFFFFF);
-        }
-        /// <summary>
-        ///   <para>Creates an AudioPlayableOutput on the graph.</para>
-        /// </summary>
-        /// <param name="graph">The PlayableGraph object.</param>
-        /// <param name="name">An indentifier for the output.</param>
-        /// <param name="target">An optional mixer group to bind the output to.</param>
-        /// <returns>
-        ///   <para>Handle to the output created.</para>
-        /// </returns>
-        public static AudioPlayableOutput CreateAudioOutput(this PlayableGraph graph, string name, AudioMixerGroup target)
+	/// <summary>
+	///   <para>Extends PlayableGraph for Audio.</para>
+	/// </summary>
+	// Token: 0x0200021A RID: 538
+	public static class AudioPlayableGraphExtensions
+	{
+		/// <summary>
+		///   <para>Creates an AudioPlayableOutput on the graph.</para>
+		/// </summary>
+		/// <param name="graph">The PlayableGraph object.</param>
+		/// <param name="name">An indentifier for the output.</param>
+		/// <param name="target">An optional mixer group to bind the output to.</param>
+		/// <returns>
+		///   <para>Handle to the output created.</para>
+		/// </returns>
+		// Token: 0x06002330 RID: 9008 RVA: 0x00028840 File Offset: 0x00026A40
+		public static AudioPlayableOutput CreateAudioOutput(this PlayableGraph graph, string name, AudioMixerGroup target)
 		{
 			AudioPlayableOutput audioPlayableOutput = default(AudioPlayableOutput);
 			AudioPlayableOutput result;
@@ -50,21 +39,18 @@ namespace UnityEngine.Playables
 			return result;
 		}
 
-        private static bool InternalCreateAudioOutput(ref PlayableGraph graph, string name, out PlayableOutput output)
-        {
-            output = default(PlayableOutput);
-            output.m_Handle = NewPtr();
-            output.m_Version = 1;
-            return true;
-        }
+		// Token: 0x06002331 RID: 9009
+		
+		[MethodImpl(4096)]
+		private static extern bool InternalCreateAudioOutput(ref PlayableGraph graph, string name, out PlayableOutput output);
 
-        /// <summary>
-        ///   <para>Destroys the PlayableOutput.</para>
-        /// </summary>
-        /// <param name="graph">The output that will be destroyed.</param>
-        /// <param name="output">The PlayableGraph object.</param>
-        // Token: 0x06002332 RID: 9010 RVA: 0x00028888 File Offset: 0x00026A88
-        public static void DestroyOutput(this PlayableGraph graph, AudioPlayableOutput output)
+		/// <summary>
+		///   <para>Destroys the PlayableOutput.</para>
+		/// </summary>
+		/// <param name="graph">The output that will be destroyed.</param>
+		/// <param name="output">The PlayableGraph object.</param>
+		// Token: 0x06002332 RID: 9010 RVA: 0x00028888 File Offset: 0x00026A88
+		public static void DestroyOutput(this PlayableGraph graph, AudioPlayableOutput output)
 		{
 			PlayableGraph.InternalDestroyOutput(ref graph, ref output.m_Output);
 		}
@@ -100,15 +86,13 @@ namespace UnityEngine.Playables
 			return AudioPlayableGraphExtensions.INTERNAL_CALL_InternalCreateAudioClipPlayable(ref graph, clip, looping, ref handle);
 		}
 
-        private static bool INTERNAL_CALL_InternalCreateAudioClipPlayable(ref PlayableGraph graph, AudioClip clip, bool looping, ref PlayableHandle handle)
-        {
-            handle.m_Handle = NewPtr();
-            handle.m_Version = 1;
-            return true;
-        }
+		// Token: 0x06002335 RID: 9013
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_InternalCreateAudioClipPlayable(ref PlayableGraph graph, AudioClip clip, bool looping, ref PlayableHandle handle);
 
-        // Token: 0x06002336 RID: 9014 RVA: 0x000288F4 File Offset: 0x00026AF4
-        [ExcludeFromDocs]
+		// Token: 0x06002336 RID: 9014 RVA: 0x000288F4 File Offset: 0x00026AF4
+		[ExcludeFromDocs]
 		public static PlayableHandle CreateAudioMixerPlayable(this PlayableGraph graph, int inputCount)
 		{
 			bool normalizeInputVolumes = false;
@@ -147,7 +131,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x0600233A RID: 9018
-		//[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalCreateAudioMixerPlayable(ref PlayableGraph graph, int inputCount, bool normalizeInputVolumes, ref PlayableHandle handle);
 
@@ -173,9 +157,9 @@ namespace UnityEngine.Playables
 			return AudioPlayableGraphExtensions.INTERNAL_CALL_InternalCreateAudioDSPPlayableSO(ref graph, dspType, driver, dspParam, ref handle);
 		}
 
-        // Token: 0x0600233D RID: 9021
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600233D RID: 9021
+		
+		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalCreateAudioDSPPlayableSO(ref PlayableGraph graph, BuiltinDSPType dspType,  ScriptableObject driver, DSPFloatParameter[] dspParam, ref PlayableHandle handle);
 
 		// Token: 0x0600233E RID: 9022 RVA: 0x000289E8 File Offset: 0x00026BE8
@@ -200,9 +184,9 @@ namespace UnityEngine.Playables
 			return AudioPlayableGraphExtensions.INTERNAL_CALL_InternalCreateAudioDSPPlayableMB(ref graph, dspType, driver, dspParam, ref handle);
 		}
 
-        // Token: 0x06002340 RID: 9024
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06002340 RID: 9024
+		
+		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalCreateAudioDSPPlayableMB(ref PlayableGraph graph, BuiltinDSPType dspType,  MonoBehaviour driver, DSPFloatParameter[] dspParam, ref PlayableHandle handle);
 	}
 }

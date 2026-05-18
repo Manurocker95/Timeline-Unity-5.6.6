@@ -7,7 +7,7 @@ namespace UnityEngine.Playables
 	///   <para>Script output for the Graph. ScriptPlayable can be used to write custom Playable that implement their own PrepareFrame callback.</para>
 	/// </summary>
 	// Token: 0x020000F0 RID: 240
-	//[UsedByNativeCode]
+	
 	public struct ScriptPlayableOutput
 	{
 		/// <summary>

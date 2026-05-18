@@ -20,9 +20,9 @@ namespace UnityEngine.Playables
 			return ScriptPlayableGraphExtensions.InternalScriptOutputCount(ref graph);
 		}
 
-        // Token: 0x06001131 RID: 4401
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001131 RID: 4401
+		
+		[MethodImpl(4096)]
 		private static extern int InternalScriptOutputCount(ref PlayableGraph graph);
 
 		/// <summary>
@@ -46,9 +46,9 @@ namespace UnityEngine.Playables
 			return result;
 		}
 
-        // Token: 0x06001133 RID: 4403
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x06001133 RID: 4403
+		
+		[MethodImpl(4096)]
 		private static extern bool InternalGetScriptOutput(ref PlayableGraph graph, int index, out PlayableOutput output);
 
 		// Token: 0x06001134 RID: 4404 RVA: 0x00016E20 File Offset: 0x00015020
@@ -230,9 +230,9 @@ namespace UnityEngine.Playables
 			ScriptPlayableGraphExtensions.INTERNAL_CALL_SetScriptInstance(ref handle, instance);
 		}
 
-        // Token: 0x0600113B RID: 4411
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600113B RID: 4411
+		
+		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetScriptInstance(ref PlayableHandle handle, object instance);
 
 		// Token: 0x0600113C RID: 4412 RVA: 0x000171B0 File Offset: 0x000153B0
@@ -241,14 +241,14 @@ namespace UnityEngine.Playables
 			return ScriptPlayableGraphExtensions.INTERNAL_CALL_InternalCreateScriptPlayable(ref graph, ref handle, type);
 		}
 
-        // Token: 0x0600113D RID: 4413
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600113D RID: 4413
+		
+		[MethodImpl(4096)]
 		private static extern object INTERNAL_CALL_InternalCreateScriptPlayable(ref PlayableGraph graph, ref PlayableHandle handle, Type type);
 
-        // Token: 0x0600113E RID: 4414
-        //[GeneratedByOldBindingsGenerator]
-        [MethodImpl(4096)]
+		// Token: 0x0600113E RID: 4414
+		
+		[MethodImpl(4096)]
 		private static extern void InternalCopyObject(Object source, Object dest);
 	}
 }

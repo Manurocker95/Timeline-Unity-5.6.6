@@ -8,7 +8,7 @@ namespace UnityEngine.Playables
 	///   <para>Handle representing a Playable created in a PlayableGraph. The PlayableHandle implements all general usage Playable methods.</para>
 	/// </summary>
 	// Token: 0x020000E7 RID: 231
-	//[UsedByNativeCode]
+	
 	public struct PlayableHandle
 	{
 		// Token: 0x0600107C RID: 4220 RVA: 0x000161A8 File Offset: 0x000143A8
@@ -45,7 +45,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x0600107E RID: 4222
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern object INTERNAL_CALL_GetScriptInstance(ref PlayableHandle playable);
 
@@ -56,7 +56,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x06001080 RID: 4224
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetScriptInstance(ref PlayableHandle playable, object scriptInstance);
 
@@ -76,7 +76,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x06001083 RID: 4227
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_IsValidInternal(ref PlayableHandle playable);
 
@@ -87,7 +87,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x06001085 RID: 4229
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern Type INTERNAL_CALL_GetPlayableTypeOf(ref PlayableHandle playable);
 
@@ -285,7 +285,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x0600109A RID: 4250
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_CanChangeInputsInternal(ref PlayableHandle playable);
 
@@ -296,7 +296,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x0600109C RID: 4252
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_CanSetWeightsInternal(ref PlayableHandle playable);
 
@@ -307,7 +307,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x0600109E RID: 4254
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_CanDestroyInternal(ref PlayableHandle playable);
 
@@ -318,7 +318,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010A0 RID: 4256
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern PlayState INTERNAL_CALL_GetPlayStateInternal(ref PlayableHandle playable);
 
@@ -329,7 +329,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010A2 RID: 4258
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetPlayStateInternal(ref PlayableHandle playable, PlayState playState);
 
@@ -340,7 +340,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010A4 RID: 4260
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern double INTERNAL_CALL_GetSpeedInternal(ref PlayableHandle playable);
 
@@ -351,7 +351,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010A6 RID: 4262
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetSpeedInternal(ref PlayableHandle playable, double speed);
 
@@ -362,7 +362,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010A8 RID: 4264
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern double INTERNAL_CALL_GetTimeInternal(ref PlayableHandle playable);
 
@@ -373,7 +373,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010AA RID: 4266
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetTimeInternal(ref PlayableHandle playable, double time);
 
@@ -384,7 +384,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010AC RID: 4268
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalGetDone(ref PlayableHandle playable);
 
@@ -395,7 +395,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010AE RID: 4270
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_InternalSetDone(ref PlayableHandle playable, bool isDone);
 
@@ -424,7 +424,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010B2 RID: 4274
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern double INTERNAL_CALL_GetDurationInternal(ref PlayableHandle playable);
 
@@ -435,7 +435,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010B4 RID: 4276
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetDurationInternal(ref PlayableHandle playable, double duration);
 
@@ -446,7 +446,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010B6 RID: 4278
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern bool INTERNAL_CALL_InternalGetPropagateSetTime(ref PlayableHandle playable);
 
@@ -457,7 +457,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010B8 RID: 4280
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_InternalSetPropagateSetTime(ref PlayableHandle playable, bool value);
 
@@ -468,7 +468,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010BA RID: 4282
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_GetGraphInternal(ref PlayableHandle playable, ref PlayableGraph graph);
 
@@ -479,7 +479,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010BC RID: 4284
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern int INTERNAL_CALL_GetInputCountInternal(ref PlayableHandle playable);
 
@@ -490,7 +490,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010BE RID: 4286
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetInputCountInternal(ref PlayableHandle playable, int count);
 
@@ -501,7 +501,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010C0 RID: 4288
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern int INTERNAL_CALL_GetOutputCountInternal(ref PlayableHandle playable);
 
@@ -512,7 +512,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010C2 RID: 4290
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetOutputCountInternal(ref PlayableHandle playable, int count);
 
@@ -535,7 +535,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010C5 RID: 4293
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_GetInputInternal(ref PlayableHandle playable, int index, out PlayableHandle value);
 
@@ -558,7 +558,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010C8 RID: 4296
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_GetOutputInternal(ref PlayableHandle playable, int index, out PlayableHandle value);
 
@@ -569,7 +569,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010CA RID: 4298
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetInputWeightFromIndexInternal(ref PlayableHandle playable, int index, float weight);
 
@@ -601,7 +601,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010CD RID: 4301
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern float INTERNAL_CALL_GetInputWeightFromIndexInternal(ref PlayableHandle playable, int index);
 
@@ -631,7 +631,7 @@ namespace UnityEngine.Playables
 		}
 
 		// Token: 0x060010D0 RID: 4304
-		[GeneratedByOldBindingsGenerator]
+		
 		[MethodImpl(4096)]
 		private static extern void INTERNAL_CALL_SetInputWeightInternal(ref PlayableHandle playable, ref PlayableHandle input, float weight);
 

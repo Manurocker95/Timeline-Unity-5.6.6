@@ -1,5 +1,4 @@
-﻿using HorrorEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine.Internal;
@@ -10,45 +9,34 @@ namespace UnityEngine.Playables
 	/// <summary>
 	///   <para>Playable that plays a RuntimeAnimatorController. Can be used as an input to an AnimationPlayable.</para>
 	/// </summary>
+	// Token: 0x0200025F RID: 607
+	
 	public class AnimatorControllerPlayable : AnimationPlayable
 	{
-        // Controller per handle (if you wire this elsewhere).
-        private static readonly Dictionary<PlayableHandle, Animator> s_Controllers =
-            new Dictionary<PlayableHandle, Animator>();
-
-        public static implicit operator PlayableHandle(AnimatorControllerPlayable b)
+		// Token: 0x0600262A RID: 9770 RVA: 0x0002B238 File Offset: 0x00029438
+		public static implicit operator PlayableHandle(AnimatorControllerPlayable b)
 		{
 			return b.handle;
 		}
 
+		// Token: 0x0600262B RID: 9771 RVA: 0x0002B254 File Offset: 0x00029454
 		private static RuntimeAnimatorController GetAnimatorControllerInternal(ref PlayableHandle handle)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetAnimatorControllerInternal(ref handle);
 		}
 
-        private static RuntimeAnimatorController INTERNAL_CALL_GetAnimatorControllerInternal(ref PlayableHandle handle)
-        {
-            Animator ctrl;
-            if (s_Controllers.TryGetValue(handle, out ctrl))
-                return ctrl.runtimeAnimatorController;
-            return null;
-        }
+		// Token: 0x0600262C RID: 9772
+		
+		[MethodImpl(4096)]
+		private static extern RuntimeAnimatorController INTERNAL_CALL_GetAnimatorControllerInternal(ref PlayableHandle handle);
 
-        private static Animator GetAnimatorController(ref PlayableHandle handle)
-        {
-            Animator ctrl;
-            if (s_Controllers.TryGetValue(handle, out ctrl))
-                return ctrl;
-
-            return null;
-        }
-
-        /// <summary>
-        ///   <para>See IAnimatorControllerPlayable.GetFloat.</para>
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="id"></param>
-        public float GetFloat(string name)
+		/// <summary>
+		///   <para>See IAnimatorControllerPlayable.GetFloat.</para>
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="id"></param>
+		// Token: 0x0600262D RID: 9773 RVA: 0x0002B270 File Offset: 0x00029470
+		public float GetFloat(string name)
 		{
 			return AnimatorControllerPlayable.GetFloatString(ref this.handle, name);
 		}
@@ -58,6 +46,7 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="id"></param>
+		// Token: 0x0600262E RID: 9774 RVA: 0x0002B294 File Offset: 0x00029494
 		public float GetFloat(int id)
 		{
 			return AnimatorControllerPlayable.GetFloatID(ref this.handle, id);
@@ -69,6 +58,7 @@ namespace UnityEngine.Playables
 		/// <param name="name"></param>
 		/// <param name="value"></param>
 		/// <param name="id"></param>
+		// Token: 0x0600262F RID: 9775 RVA: 0x0002B2B8 File Offset: 0x000294B8
 		public void SetFloat(string name, float value)
 		{
 			AnimatorControllerPlayable.SetFloatString(ref this.handle, name, value);
@@ -80,6 +70,7 @@ namespace UnityEngine.Playables
 		/// <param name="name"></param>
 		/// <param name="value"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002630 RID: 9776 RVA: 0x0002B2C8 File Offset: 0x000294C8
 		public void SetFloat(int id, float value)
 		{
 			AnimatorControllerPlayable.SetFloatID(ref this.handle, id, value);
@@ -90,6 +81,7 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002631 RID: 9777 RVA: 0x0002B2D8 File Offset: 0x000294D8
 		public bool GetBool(string name)
 		{
 			return AnimatorControllerPlayable.GetBoolString(ref this.handle, name);
@@ -100,6 +92,7 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002632 RID: 9778 RVA: 0x0002B2FC File Offset: 0x000294FC
 		public bool GetBool(int id)
 		{
 			return AnimatorControllerPlayable.GetBoolID(ref this.handle, id);
@@ -111,6 +104,7 @@ namespace UnityEngine.Playables
 		/// <param name="name"></param>
 		/// <param name="value"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002633 RID: 9779 RVA: 0x0002B320 File Offset: 0x00029520
 		public void SetBool(string name, bool value)
 		{
 			AnimatorControllerPlayable.SetBoolString(ref this.handle, name, value);
@@ -121,7 +115,8 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="value"></param>
-		/// <param name="id"></param>		
+		/// <param name="id"></param>
+		// Token: 0x06002634 RID: 9780 RVA: 0x0002B330 File Offset: 0x00029530
 		public void SetBool(int id, bool value)
 		{
 			AnimatorControllerPlayable.SetBoolID(ref this.handle, id, value);
@@ -132,6 +127,7 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002635 RID: 9781 RVA: 0x0002B340 File Offset: 0x00029540
 		public int GetInteger(string name)
 		{
 			return AnimatorControllerPlayable.GetIntegerString(ref this.handle, name);
@@ -142,6 +138,7 @@ namespace UnityEngine.Playables
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002636 RID: 9782 RVA: 0x0002B364 File Offset: 0x00029564
 		public int GetInteger(int id)
 		{
 			return AnimatorControllerPlayable.GetIntegerID(ref this.handle, id);
@@ -153,6 +150,7 @@ namespace UnityEngine.Playables
 		/// <param name="name"></param>
 		/// <param name="value"></param>
 		/// <param name="id"></param>
+		// Token: 0x06002637 RID: 9783 RVA: 0x0002B388 File Offset: 0x00029588
 		public void SetInteger(string name, int value)
 		{
 			AnimatorControllerPlayable.SetIntegerString(ref this.handle, name, value);
@@ -239,6 +237,8 @@ namespace UnityEngine.Playables
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.layerCount.</para>
 		/// </summary>
+		// Token: 0x1700096F RID: 2415
+		// (get) Token: 0x0600263F RID: 9791 RVA: 0x0002B430 File Offset: 0x00029630
 		public int layerCount
 		{
 			get
@@ -253,58 +253,42 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetLayerCountInternal(ref handle);
 		}
 
-        private static int INTERNAL_CALL_GetLayerCountInternal(ref PlayableHandle handle)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-			if (controller != null)
-			{
-				return controller.layerCount;
-            }
+		// Token: 0x06002641 RID: 9793
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetLayerCountInternal(ref PlayableHandle handle);
 
-			return 0;
-        }
-
-        // Token: 0x06002642 RID: 9794 RVA: 0x0002B46C File Offset: 0x0002966C
-        private static string GetLayerNameInternal(ref PlayableHandle handle, int layerIndex)
+		// Token: 0x06002642 RID: 9794 RVA: 0x0002B46C File Offset: 0x0002966C
+		private static string GetLayerNameInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetLayerNameInternal(ref handle, layerIndex);
 		}
 
-		private static string INTERNAL_CALL_GetLayerNameInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetLayerName(layerIndex);
-            }
-
-            return "";
-        }
+		// Token: 0x06002643 RID: 9795
+		
+		[MethodImpl(4096)]
+		private static extern string INTERNAL_CALL_GetLayerNameInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetLayerName.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002644 RID: 9796 RVA: 0x0002B488 File Offset: 0x00029688
 		public string GetLayerName(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetLayerNameInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x06002645 RID: 9797 RVA: 0x0002B4AC File Offset: 0x000296AC
 		private static int GetLayerIndexInternal(ref PlayableHandle handle, string layerName)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetLayerIndexInternal(ref handle, layerName);
 		}
 
-		private static int INTERNAL_CALL_GetLayerIndexInternal(ref PlayableHandle handle, string layerName)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetLayerIndex(layerName);
-            }
-
-			return 0;
-        }
+		// Token: 0x06002646 RID: 9798
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetLayerIndexInternal(ref PlayableHandle handle, string layerName);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetLayerIndex.</para>
@@ -322,118 +306,101 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetLayerWeightInternal(ref handle, layerIndex);
 		}
 
-		private static float INTERNAL_CALL_GetLayerWeightInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetLayerWeight(layerIndex);
-            }
-
-            return 0f;
-        }
+		// Token: 0x06002649 RID: 9801
+		
+		[MethodImpl(4096)]
+		private static extern float INTERNAL_CALL_GetLayerWeightInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetLayerWeight.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x0600264A RID: 9802 RVA: 0x0002B508 File Offset: 0x00029708
 		public float GetLayerWeight(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetLayerWeightInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x0600264B RID: 9803 RVA: 0x0002B52C File Offset: 0x0002972C
 		private static void SetLayerWeightInternal(ref PlayableHandle handle, int layerIndex, float weight)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_SetLayerWeightInternal(ref handle, layerIndex, weight);
 		}
 
-		private static void INTERNAL_CALL_SetLayerWeightInternal(ref PlayableHandle handle, int layerIndex, float weight)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetLayerWeight(layerIndex, weight);
-            }
-        }
+		// Token: 0x0600264C RID: 9804
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetLayerWeightInternal(ref PlayableHandle handle, int layerIndex, float weight);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.SetLayerWeight.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
 		/// <param name="weight"></param>
+		// Token: 0x0600264D RID: 9805 RVA: 0x0002B538 File Offset: 0x00029738
 		public void SetLayerWeight(int layerIndex, float weight)
 		{
 			AnimatorControllerPlayable.SetLayerWeightInternal(ref this.handle, layerIndex, weight);
 		}
 
+		// Token: 0x0600264E RID: 9806 RVA: 0x0002B548 File Offset: 0x00029748
 		private static AnimatorStateInfo GetCurrentAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetCurrentAnimatorStateInfoInternal(ref handle, layerIndex);
 		}
 
-		private static AnimatorStateInfo INTERNAL_CALL_GetCurrentAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				return controller.GetCurrentAnimatorStateInfo(layerIndex);
-            }
-			return new AnimatorStateInfo();
-        }
+		// Token: 0x0600264F RID: 9807
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorStateInfo INTERNAL_CALL_GetCurrentAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetCurrentAnimatorStateInfo.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002650 RID: 9808 RVA: 0x0002B564 File Offset: 0x00029764
 		public AnimatorStateInfo GetCurrentAnimatorStateInfo(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetCurrentAnimatorStateInfoInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x06002651 RID: 9809 RVA: 0x0002B588 File Offset: 0x00029788
 		private static AnimatorStateInfo GetNextAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetNextAnimatorStateInfoInternal(ref handle, layerIndex);
 		}
 
-		private static AnimatorStateInfo INTERNAL_CALL_GetNextAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetNextAnimatorStateInfo(layerIndex);
-            }
-            return new AnimatorStateInfo();
-        }
+		// Token: 0x06002652 RID: 9810
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorStateInfo INTERNAL_CALL_GetNextAnimatorStateInfoInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetNextAnimatorStateInfo.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002653 RID: 9811 RVA: 0x0002B5A4 File Offset: 0x000297A4
 		public AnimatorStateInfo GetNextAnimatorStateInfo(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetNextAnimatorStateInfoInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x06002654 RID: 9812 RVA: 0x0002B5C8 File Offset: 0x000297C8
 		private static AnimatorTransitionInfo GetAnimatorTransitionInfoInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetAnimatorTransitionInfoInternal(ref handle, layerIndex);
 		}
 
-		private static AnimatorTransitionInfo INTERNAL_CALL_GetAnimatorTransitionInfoInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetAnimatorTransitionInfo(layerIndex);
-            }
-            return new AnimatorTransitionInfo();
-
-        }
+		// Token: 0x06002655 RID: 9813
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorTransitionInfo INTERNAL_CALL_GetAnimatorTransitionInfoInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetAnimatorTransitionInfo.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002656 RID: 9814 RVA: 0x0002B5E4 File Offset: 0x000297E4
 		public AnimatorTransitionInfo GetAnimatorTransitionInfo(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetAnimatorTransitionInfoInternal(ref this.handle, layerIndex);
@@ -445,26 +412,22 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetCurrentAnimatorClipInfoInternal(ref handle, layerIndex);
 		}
 
-		private static AnimatorClipInfo[] INTERNAL_CALL_GetCurrentAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetCurrentAnimatorClipInfo(layerIndex);
-            }
-            return new AnimatorClipInfo[0];
+		// Token: 0x06002658 RID: 9816
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorClipInfo[] INTERNAL_CALL_GetCurrentAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex);
 
-        }
-
-        /// <summary>
-        ///   <para>See IAnimatorControllerPlayable.GetCurrentAnimatorClipInfo.</para>
-        /// </summary>
-        /// <param name="layerIndex"></param>
-        public AnimatorClipInfo[] GetCurrentAnimatorClipInfo(int layerIndex)
+		/// <summary>
+		///   <para>See IAnimatorControllerPlayable.GetCurrentAnimatorClipInfo.</para>
+		/// </summary>
+		/// <param name="layerIndex"></param>
+		// Token: 0x06002659 RID: 9817 RVA: 0x0002B624 File Offset: 0x00029824
+		public AnimatorClipInfo[] GetCurrentAnimatorClipInfo(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetCurrentAnimatorClipInfoInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x0600265A RID: 9818 RVA: 0x0002B648 File Offset: 0x00029848
 		public void GetCurrentAnimatorClipInfo(int layerIndex, List<AnimatorClipInfo> clips)
 		{
 			if (clips == null)
@@ -474,6 +437,7 @@ namespace UnityEngine.Playables
 			this.GetAnimatorClipInfoInternal(ref this.handle, layerIndex, true, clips);
 		}
 
+		// Token: 0x0600265B RID: 9819 RVA: 0x0002B66C File Offset: 0x0002986C
 		public void GetNextAnimatorClipInfo(int layerIndex, List<AnimatorClipInfo> clips)
 		{
 			if (clips == null)
@@ -483,39 +447,33 @@ namespace UnityEngine.Playables
 			this.GetAnimatorClipInfoInternal(ref this.handle, layerIndex, false, clips);
 		}
 
+		// Token: 0x0600265C RID: 9820 RVA: 0x0002B690 File Offset: 0x00029890
 		private void GetAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex, bool isCurrent, object clips)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_GetAnimatorClipInfoInternal(this, ref handle, layerIndex, isCurrent, clips);
 		}
 
-		private static void INTERNAL_CALL_GetAnimatorClipInfoInternal(AnimatorControllerPlayable self, ref PlayableHandle handle, int layerIndex, bool isCurrent, object clips)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                var clipInfo = controller.GetCurrentAnimatorClipInfo(layerIndex);
-            }
-        }
+		// Token: 0x0600265D RID: 9821
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_GetAnimatorClipInfoInternal(AnimatorControllerPlayable self, ref PlayableHandle handle, int layerIndex, bool isCurrent, object clips);
 
+		// Token: 0x0600265E RID: 9822 RVA: 0x0002B6A0 File Offset: 0x000298A0
 		private static int GetAnimatorClipInfoCountInternal(ref PlayableHandle handle, int layerIndex, bool current)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetAnimatorClipInfoCountInternal(ref handle, layerIndex, current);
 		}
 
-		private static int INTERNAL_CALL_GetAnimatorClipInfoCountInternal(ref PlayableHandle handle, int layerIndex, bool current)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetCurrentAnimatorClipInfoCount(layerIndex);
-            }
-			return 0;
-        }
+		// Token: 0x0600265F RID: 9823
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetAnimatorClipInfoCountInternal(ref PlayableHandle handle, int layerIndex, bool current);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.GetCurrentAnimatorClipInfoCount.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002660 RID: 9824 RVA: 0x0002B6C0 File Offset: 0x000298C0
 		public int GetCurrentAnimatorClipInfoCount(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetAnimatorClipInfoCountInternal(ref this.handle, layerIndex, true);
@@ -525,73 +483,60 @@ namespace UnityEngine.Playables
 		///   <para>See IAnimatorControllerPlayable.GetNextAnimatorClipInfoCount.</para>
 		/// </summary>
 		/// <param name="layerIndex"></param>
+		// Token: 0x06002661 RID: 9825 RVA: 0x0002B6E4 File Offset: 0x000298E4
 		public int GetNextAnimatorClipInfoCount(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetAnimatorClipInfoCountInternal(ref this.handle, layerIndex, false);
 		}
 
+		// Token: 0x06002662 RID: 9826 RVA: 0x0002B708 File Offset: 0x00029908
 		private static AnimatorClipInfo[] GetNextAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetNextAnimatorClipInfoInternal(ref handle, layerIndex);
 		}
 
-		private static AnimatorClipInfo[] INTERNAL_CALL_GetNextAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetNextAnimatorClipInfo(layerIndex);
-            }
-            return new AnimatorClipInfo[0];
-        }
+		// Token: 0x06002663 RID: 9827
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorClipInfo[] INTERNAL_CALL_GetNextAnimatorClipInfoInternal(ref PlayableHandle handle, int layerIndex);
 
-        /// <summary>
-        ///   <para>See IAnimatorControllerPlayable.GetNextAnimatorClipInfo.</para>
-        /// </summary>
-        /// <param name="layerIndex"></param>
-
-        public AnimatorClipInfo[] GetNextAnimatorClipInfo(int layerIndex)
+		/// <summary>
+		///   <para>See IAnimatorControllerPlayable.GetNextAnimatorClipInfo.</para>
+		/// </summary>
+		/// <param name="layerIndex"></param>
+		// Token: 0x06002664 RID: 9828 RVA: 0x0002B724 File Offset: 0x00029924
+		public AnimatorClipInfo[] GetNextAnimatorClipInfo(int layerIndex)
 		{
 			return AnimatorControllerPlayable.GetNextAnimatorClipInfoInternal(ref this.handle, layerIndex);
 		}
 
+		// Token: 0x06002665 RID: 9829 RVA: 0x0002B748 File Offset: 0x00029948
 		internal string ResolveHash(int hash)
 		{
 			return AnimatorControllerPlayable.ResolveHashInternal(ref this.handle, hash);
 		}
 
-
+		// Token: 0x06002666 RID: 9830 RVA: 0x0002B76C File Offset: 0x0002996C
 		private static string ResolveHashInternal(ref PlayableHandle handle, int hash)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_ResolveHashInternal(ref handle, hash);
 		}
 
-		private static string INTERNAL_CALL_ResolveHashInternal(ref PlayableHandle handle, int hash)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				//TODO
-            }
+		// Token: 0x06002667 RID: 9831
+		
+		[MethodImpl(4096)]
+		private static extern string INTERNAL_CALL_ResolveHashInternal(ref PlayableHandle handle, int hash);
 
-			return "";
-        }
-
+		// Token: 0x06002668 RID: 9832 RVA: 0x0002B788 File Offset: 0x00029988
 		private static bool IsInTransitionInternal(ref PlayableHandle handle, int layerIndex)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_IsInTransitionInternal(ref handle, layerIndex);
 		}
 
-
-		private static bool INTERNAL_CALL_IsInTransitionInternal(ref PlayableHandle handle, int layerIndex)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				return controller.IsInTransition(layerIndex);
-            }
-			return false;
-        }
+		// Token: 0x06002669 RID: 9833
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_IsInTransitionInternal(ref PlayableHandle handle, int layerIndex);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.IsInTransition.</para>
@@ -609,15 +554,10 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetParameterCountInternal(ref handle);
 		}
 
-		private static int INTERNAL_CALL_GetParameterCountInternal(ref PlayableHandle handle)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				return controller.parameterCount;
-            }
-            return 0;
-        }
+		// Token: 0x0600266C RID: 9836
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetParameterCountInternal(ref PlayableHandle handle);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.parameterCount.</para>
@@ -638,15 +578,10 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetParametersArrayInternal(ref handle);
 		}
 
-		private static AnimatorControllerParameter[] INTERNAL_CALL_GetParametersArrayInternal(ref PlayableHandle handle)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.parameters;
-            }
-            return new AnimatorControllerParameter[0];
-        }
+		// Token: 0x0600266F RID: 9839
+		
+		[MethodImpl(4096)]
+		private static extern AnimatorControllerParameter[] INTERNAL_CALL_GetParametersArrayInternal(ref PlayableHandle handle);
 
 		/// <summary>
 		///   <para>See AnimatorController.GetParameter.</para>
@@ -663,21 +598,10 @@ namespace UnityEngine.Playables
 			return parametersArrayInternal[index];
 		}
 
-		private static int StringToHash(string name)
-		{
-            if (string.IsNullOrEmpty(name))
-                return 0;
-
-            // Unity uses a 32-bit FNV-1a hash for Animator names/parameters
-            uint hash = 2166136261u;
-            for (int i = 0; i < name.Length; i++)
-            {
-                hash ^= (uint)name[i];
-                hash *= 16777619u;
-            }
-
-            return (int)hash;
-        }
+		// Token: 0x06002671 RID: 9841
+		
+		[MethodImpl(4096)]
+		private static extern int StringToHash(string name);
 
 		// Token: 0x06002672 RID: 9842 RVA: 0x0002B860 File Offset: 0x00029A60
 		[ExcludeFromDocs]
@@ -764,14 +688,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_CrossFadeInFixedTimeInternal(ref handle, stateNameHash, transitionDuration, layer, fixedTime);
 		}
 
-		private static void INTERNAL_CALL_CrossFadeInFixedTimeInternal(ref PlayableHandle handle, int stateNameHash, float transitionDuration, int layer, float fixedTime)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.CrossFadeInFixedTime(stateNameHash, transitionDuration, layer, fixedTime);
-            }
-        }
+		// Token: 0x0600267B RID: 9851
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_CrossFadeInFixedTimeInternal(ref PlayableHandle handle, int stateNameHash, float transitionDuration, int layer, float fixedTime);
 
 		// Token: 0x0600267C RID: 9852 RVA: 0x0002B95C File Offset: 0x00029B5C
 		[ExcludeFromDocs]
@@ -858,14 +778,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_CrossFadeInternal(ref handle, stateNameHash, transitionDuration, layer, negativeInfinity);
 		}
 
-		private static void INTERNAL_CALL_CrossFadeInternal(ref PlayableHandle handle, int stateNameHash, float transitionDuration, int layer, float normalizedTime)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				controller.CrossFade(stateNameHash, transitionDuration, layer, normalizedTime);
-            }
-        }
+		// Token: 0x06002685 RID: 9861
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_CrossFadeInternal(ref PlayableHandle handle, int stateNameHash, float transitionDuration, int layer, float normalizedTime);
 
 		// Token: 0x06002686 RID: 9862 RVA: 0x0002BA58 File Offset: 0x00029C58
 		[ExcludeFromDocs]
@@ -950,14 +866,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_PlayInFixedTimeInternal(ref handle, stateNameHash, layer, negativeInfinity);
 		}
 
-		private static void INTERNAL_CALL_PlayInFixedTimeInternal(ref PlayableHandle handle, int stateNameHash, int layer, float fixedTime)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.PlayInFixedTime(stateNameHash, layer, fixedTime);
-            }
-        }
+		// Token: 0x0600268F RID: 9871
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_PlayInFixedTimeInternal(ref PlayableHandle handle, int stateNameHash, int layer, float fixedTime);
 
 		// Token: 0x06002690 RID: 9872 RVA: 0x0002BB50 File Offset: 0x00029D50
 		[ExcludeFromDocs]
@@ -1042,14 +954,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_PlayInternal(ref handle, stateNameHash, layer, negativeInfinity);
 		}
 
-		private static void INTERNAL_CALL_PlayInternal(ref PlayableHandle handle, int stateNameHash, int layer, float normalizedTime)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.Play(stateNameHash, layer, normalizedTime);
-            }
-        }
+		// Token: 0x06002699 RID: 9881
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_PlayInternal(ref PlayableHandle handle, int stateNameHash, int layer, float normalizedTime);
 
 		/// <summary>
 		///   <para>See IAnimatorControllerPlayable.HasState.</para>
@@ -1068,15 +976,10 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_HasStateInternal(ref handle, layerIndex, stateID);
 		}
 
-		private static bool INTERNAL_CALL_HasStateInternal(ref PlayableHandle handle, int layerIndex, int stateID)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.HasState(layerIndex, stateID);
-            }
-			return false;
-        }
+		// Token: 0x0600269C RID: 9884
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_HasStateInternal(ref PlayableHandle handle, int layerIndex, int stateID);
 
 		// Token: 0x0600269D RID: 9885 RVA: 0x0002BC8C File Offset: 0x00029E8C
 		private static void SetFloatString(ref PlayableHandle handle, string name, float value)
@@ -1084,14 +987,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_SetFloatString(ref handle, name, value);
 		}
 
-		private static void INTERNAL_CALL_SetFloatString(ref PlayableHandle handle, string name, float value)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetFloat(name, value);
-            }
-        }
+		// Token: 0x0600269E RID: 9886
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetFloatString(ref PlayableHandle handle, string name, float value);
 
 		// Token: 0x0600269F RID: 9887 RVA: 0x0002BC98 File Offset: 0x00029E98
 		private static void SetFloatID(ref PlayableHandle handle, int id, float value)
@@ -1099,31 +998,21 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_SetFloatID(ref handle, id, value);
 		}
 
-		private static void INTERNAL_CALL_SetFloatID(ref PlayableHandle handle, int id, float value)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetFloat(id, value);
-            }
-        }
+		// Token: 0x060026A0 RID: 9888
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetFloatID(ref PlayableHandle handle, int id, float value);
 
-        // Token: 0x060026A1 RID: 9889 RVA: 0x0002BCA4 File Offset: 0x00029EA4
-        private static float GetFloatString(ref PlayableHandle handle, string name)
+		// Token: 0x060026A1 RID: 9889 RVA: 0x0002BCA4 File Offset: 0x00029EA4
+		private static float GetFloatString(ref PlayableHandle handle, string name)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetFloatString(ref handle, name);
 		}
 
-		private static float INTERNAL_CALL_GetFloatString(ref PlayableHandle handle, string name)
-		{ 
-			Animator controller = GetAnimatorController(ref handle);
-			if (controller != null)
-			{
-				return controller.GetFloat(name);
-			}
-            
-            return 0f;
-		}
+		// Token: 0x060026A2 RID: 9890
+		
+		[MethodImpl(4096)]
+		private static extern float INTERNAL_CALL_GetFloatString(ref PlayableHandle handle, string name);
 
 		// Token: 0x060026A3 RID: 9891 RVA: 0x0002BCC0 File Offset: 0x00029EC0
 		private static float GetFloatID(ref PlayableHandle handle, int id)
@@ -1131,16 +1020,10 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetFloatID(ref handle, id);
 		}
 
-		private static float INTERNAL_CALL_GetFloatID(ref PlayableHandle handle, int id)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetFloat(id);
-            }
-
-            return 0f;
-        }
+		// Token: 0x060026A4 RID: 9892
+		
+		[MethodImpl(4096)]
+		private static extern float INTERNAL_CALL_GetFloatID(ref PlayableHandle handle, int id);
 
 		// Token: 0x060026A5 RID: 9893 RVA: 0x0002BCDC File Offset: 0x00029EDC
 		private static void SetBoolString(ref PlayableHandle handle, string name, bool value)
@@ -1148,45 +1031,32 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_SetBoolString(ref handle, name, value);
 		}
 
-		private static void INTERNAL_CALL_SetBoolString(ref PlayableHandle handle, string name, bool value)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetBool(name, value);
-            }
-        }
+		// Token: 0x060026A6 RID: 9894
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetBoolString(ref PlayableHandle handle, string name, bool value);
 
-        // Token: 0x060026A7 RID: 9895 RVA: 0x0002BCE8 File Offset: 0x00029EE8
-        private static void SetBoolID(ref PlayableHandle handle, int id, bool value)
+		// Token: 0x060026A7 RID: 9895 RVA: 0x0002BCE8 File Offset: 0x00029EE8
+		private static void SetBoolID(ref PlayableHandle handle, int id, bool value)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_SetBoolID(ref handle, id, value);
 		}
 
-		private static void INTERNAL_CALL_SetBoolID(ref PlayableHandle handle, int id, bool value)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetBool(id, value);
-            }
-        }
+		// Token: 0x060026A8 RID: 9896
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetBoolID(ref PlayableHandle handle, int id, bool value);
 
-        // Token: 0x060026A9 RID: 9897 RVA: 0x0002BCF4 File Offset: 0x00029EF4
-        private static bool GetBoolString(ref PlayableHandle handle, string name)
+		// Token: 0x060026A9 RID: 9897 RVA: 0x0002BCF4 File Offset: 0x00029EF4
+		private static bool GetBoolString(ref PlayableHandle handle, string name)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetBoolString(ref handle, name);
 		}
 
-		private static bool INTERNAL_CALL_GetBoolString(ref PlayableHandle handle, string name)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetBool(name);
-            }
-			return false;
-        }
+		// Token: 0x060026AA RID: 9898
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_GetBoolString(ref PlayableHandle handle, string name);
 
 		// Token: 0x060026AB RID: 9899 RVA: 0x0002BD10 File Offset: 0x00029F10
 		private static bool GetBoolID(ref PlayableHandle handle, int id)
@@ -1194,30 +1064,21 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetBoolID(ref handle, id);
 		}
 
-		private static bool INTERNAL_CALL_GetBoolID(ref PlayableHandle handle, int id)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                return controller.GetBool(id);
-            }
-            return false;
-        }
+		// Token: 0x060026AC RID: 9900
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_GetBoolID(ref PlayableHandle handle, int id);
 
-        // Token: 0x060026AD RID: 9901 RVA: 0x0002BD2C File Offset: 0x00029F2C
-        private static void SetIntegerString(ref PlayableHandle handle, string name, int value)
+		// Token: 0x060026AD RID: 9901 RVA: 0x0002BD2C File Offset: 0x00029F2C
+		private static void SetIntegerString(ref PlayableHandle handle, string name, int value)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_SetIntegerString(ref handle, name, value);
 		}
 
-		private static void INTERNAL_CALL_SetIntegerString(ref PlayableHandle handle, string name, int value)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetInteger(name, value);
-            }
-        }
+		// Token: 0x060026AE RID: 9902
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetIntegerString(ref PlayableHandle handle, string name, int value);
 
 		// Token: 0x060026AF RID: 9903 RVA: 0x0002BD38 File Offset: 0x00029F38
 		private static void SetIntegerID(ref PlayableHandle handle, int id, int value)
@@ -1225,14 +1086,10 @@ namespace UnityEngine.Playables
 			AnimatorControllerPlayable.INTERNAL_CALL_SetIntegerID(ref handle, id, value);
 		}
 
-		private static void INTERNAL_CALL_SetIntegerID(ref PlayableHandle handle, int id, int value)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetInteger(id, value);
-            }
-        }
+		// Token: 0x060026B0 RID: 9904
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetIntegerID(ref PlayableHandle handle, int id, int value);
 
 		// Token: 0x060026B1 RID: 9905 RVA: 0x0002BD44 File Offset: 0x00029F44
 		private static int GetIntegerString(ref PlayableHandle handle, string name)
@@ -1240,15 +1097,10 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetIntegerString(ref handle, name);
 		}
 
-		private static int INTERNAL_CALL_GetIntegerString(ref PlayableHandle handle, string name)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.GetInteger(name);
-            }
-			return 0;
-        }
+		// Token: 0x060026B2 RID: 9906
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetIntegerString(ref PlayableHandle handle, string name);
 
 		// Token: 0x060026B3 RID: 9907 RVA: 0x0002BD60 File Offset: 0x00029F60
 		private static int GetIntegerID(ref PlayableHandle handle, int id)
@@ -1256,91 +1108,65 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_GetIntegerID(ref handle, id);
 		}
 
-		private static int INTERNAL_CALL_GetIntegerID(ref PlayableHandle handle, int id)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.GetInteger(id);
-            }
-            return 0;
-        }
+		// Token: 0x060026B4 RID: 9908
+		
+		[MethodImpl(4096)]
+		private static extern int INTERNAL_CALL_GetIntegerID(ref PlayableHandle handle, int id);
 
-        // Token: 0x060026B5 RID: 9909 RVA: 0x0002BD7C File Offset: 0x00029F7C
-        private static void SetTriggerString(ref PlayableHandle handle, string name)
+		// Token: 0x060026B5 RID: 9909 RVA: 0x0002BD7C File Offset: 0x00029F7C
+		private static void SetTriggerString(ref PlayableHandle handle, string name)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_SetTriggerString(ref handle, name);
 		}
 
-		private static void INTERNAL_CALL_SetTriggerString(ref PlayableHandle handle, string name)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetTrigger(name);
-            }
-        }
+		// Token: 0x060026B6 RID: 9910
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetTriggerString(ref PlayableHandle handle, string name);
 
-        // Token: 0x060026B7 RID: 9911 RVA: 0x0002BD88 File Offset: 0x00029F88
-        private static void SetTriggerID(ref PlayableHandle handle, int id)
+		// Token: 0x060026B7 RID: 9911 RVA: 0x0002BD88 File Offset: 0x00029F88
+		private static void SetTriggerID(ref PlayableHandle handle, int id)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_SetTriggerID(ref handle, id);
 		}
 
-		private static void INTERNAL_CALL_SetTriggerID(ref PlayableHandle handle, int id)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.SetTrigger(id);
-            }
-        }
+		// Token: 0x060026B8 RID: 9912
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_SetTriggerID(ref PlayableHandle handle, int id);
 
-        // Token: 0x060026B9 RID: 9913 RVA: 0x0002BD94 File Offset: 0x00029F94
-        private static void ResetTriggerString(ref PlayableHandle handle, string name)
+		// Token: 0x060026B9 RID: 9913 RVA: 0x0002BD94 File Offset: 0x00029F94
+		private static void ResetTriggerString(ref PlayableHandle handle, string name)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_ResetTriggerString(ref handle, name);
 		}
 
-		private static void INTERNAL_CALL_ResetTriggerString(ref PlayableHandle handle, string name)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-				controller.ResetTrigger(name);
-            }
-        }
-        // Token: 0x060026BB RID: 9915 RVA: 0x0002BDA0 File Offset: 0x00029FA0
-        private static void ResetTriggerID(ref PlayableHandle handle, int id)
+		// Token: 0x060026BA RID: 9914
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_ResetTriggerString(ref PlayableHandle handle, string name);
+
+		// Token: 0x060026BB RID: 9915 RVA: 0x0002BDA0 File Offset: 0x00029FA0
+		private static void ResetTriggerID(ref PlayableHandle handle, int id)
 		{
 			AnimatorControllerPlayable.INTERNAL_CALL_ResetTriggerID(ref handle, id);
 		}
 
-		private static void INTERNAL_CALL_ResetTriggerID(ref PlayableHandle handle, int id)
-        {
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.ResetTrigger(id);
-            }
-        }
+		// Token: 0x060026BC RID: 9916
+		
+		[MethodImpl(4096)]
+		private static extern void INTERNAL_CALL_ResetTriggerID(ref PlayableHandle handle, int id);
 
-        // Token: 0x060026BD RID: 9917 RVA: 0x0002BDAC File Offset: 0x00029FAC
-        private static bool IsParameterControlledByCurveString(ref PlayableHandle handle, string name)
+		// Token: 0x060026BD RID: 9917 RVA: 0x0002BDAC File Offset: 0x00029FAC
+		private static bool IsParameterControlledByCurveString(ref PlayableHandle handle, string name)
 		{
 			return AnimatorControllerPlayable.INTERNAL_CALL_IsParameterControlledByCurveString(ref handle, name);
 		}
 
-		private static bool INTERNAL_CALL_IsParameterControlledByCurveString(ref PlayableHandle handle, string name)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.IsParameterControlledByCurve(name);
-            }
-
-			return false;
-        }
+		// Token: 0x060026BE RID: 9918
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_IsParameterControlledByCurveString(ref PlayableHandle handle, string name);
 
 		// Token: 0x060026BF RID: 9919 RVA: 0x0002BDC8 File Offset: 0x00029FC8
 		private static bool IsParameterControlledByCurveID(ref PlayableHandle handle, int id)
@@ -1348,15 +1174,9 @@ namespace UnityEngine.Playables
 			return AnimatorControllerPlayable.INTERNAL_CALL_IsParameterControlledByCurveID(ref handle, id);
 		}
 
-		private static bool INTERNAL_CALL_IsParameterControlledByCurveID(ref PlayableHandle handle, int id)
-		{
-            Animator controller = GetAnimatorController(ref handle);
-            if (controller != null)
-            {
-                controller.IsParameterControlledByCurve(id);
-            }
-
-            return false;
-        }
+		// Token: 0x060026C0 RID: 9920
+		
+		[MethodImpl(4096)]
+		private static extern bool INTERNAL_CALL_IsParameterControlledByCurveID(ref PlayableHandle handle, int id);
 	}
 }

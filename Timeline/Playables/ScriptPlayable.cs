@@ -3,12 +3,12 @@ using UnityEngine.Scripting;
 
 namespace UnityEngine.Playables
 {
-    /// <summary>
-    ///   <para>Base class for all user-defined playables.</para>
-    /// </summary>
-    // Token: 0x020000EE RID: 238
-    //[RequiredByNativeCode]
-    [Serializable]
+	/// <summary>
+	///   <para>Base class for all user-defined playables.</para>
+	/// </summary>
+	// Token: 0x020000EE RID: 238
+	
+	[Serializable]
 	public abstract class ScriptPlayable : IPlayable, IScriptPlayable, ICloneable
 	{
 		// Token: 0x170003B3 RID: 947

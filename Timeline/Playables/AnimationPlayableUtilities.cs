@@ -5,6 +5,7 @@ namespace UnityEngine.Playables
 	/// <summary>
 	///   <para>Implements high-level utility methods to simplify use of the Playable API with Animations.</para>
 	/// </summary>
+	// Token: 0x0200022B RID: 555
 	public class AnimationPlayableUtilities
 	{
 		/// <summary>
@@ -13,14 +14,16 @@ namespace UnityEngine.Playables
 		/// <param name="animator">Target Animator.</param>
 		/// <param name="playable">The Playable that will be played.</param>
 		/// <param name="graph">The Graph that owns the Playable.</param>
+		// Token: 0x060024AB RID: 9387 RVA: 0x00029BF4 File Offset: 0x00027DF4
 		public static void Play(Animator animator, PlayableHandle playable, PlayableGraph graph)
 		{
-            AnimationPlayableOutput animationPlayableOutput = graph.CreateAnimationOutput("AnimationClip", animator);
-            animationPlayableOutput.sourcePlayable = playable;
+            AnimationPlayableOutput output = graph.CreateAnimationOutput("AnimationClip", animator);
+            output.sourcePlayable = playable;
             graph.SyncUpdateAndTimeMode(animator);
 			graph.Play();
 		}
 
+		// Token: 0x060024AC RID: 9388 RVA: 0x00029C28 File Offset: 0x00027E28
 		public static PlayableHandle PlayClip(Animator animator, AnimationClip clip, out PlayableGraph graph)
 		{
 			graph = PlayableGraph.CreateGraph();
@@ -32,6 +35,7 @@ namespace UnityEngine.Playables
 			return playableHandle;
 		}
 
+		// Token: 0x060024AD RID: 9389 RVA: 0x00029C84 File Offset: 0x00027E84
 		public static PlayableHandle PlayMixer(Animator animator, int inputCount, out PlayableGraph graph)
 		{
 			graph = PlayableGraph.CreateGraph();
@@ -43,6 +47,7 @@ namespace UnityEngine.Playables
 			return playableHandle;
 		}
 
+		// Token: 0x060024AE RID: 9390 RVA: 0x00029CE0 File Offset: 0x00027EE0
 		public static PlayableHandle PlayAnimatorController(Animator animator, RuntimeAnimatorController controller, out PlayableGraph graph)
 		{
 			graph = PlayableGraph.CreateGraph();
