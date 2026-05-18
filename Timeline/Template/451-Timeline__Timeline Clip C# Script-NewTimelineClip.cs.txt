@@ -1,0 +1,56 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
+
+// The instance of the clip for a playing timeline
+[System.Serializable]
+public class #SCRIPTNAME#Playable : ScriptPlayable
+{
+	public GameObject sceneReference;
+	
+	// Called when a timeline starts playing
+	public override void OnGraphStart() {
+		#NOTRIM#
+	}
+
+	// Called when a timeline stops playing
+	public override void OnGraphStop()  {
+		#NOTRIM#
+	}
+
+	// Called each frame when active
+	public override void PrepareFrame(FrameData info) {
+		#NOTRIM#
+	}
+
+	// Called when the clip is enabled/disabled
+	public override void OnPlayStateChanged(FrameData info, PlayState newState) {
+		#NOTRIM#
+	}
+}
+
+// The representation of the Timeline Clip
+[System.Serializable]
+public class #SCRIPTNAME# : PlayableAsset, ITimelineClipAsset
+{
+	public #SCRIPTNAME#Playable template = new #SCRIPTNAME#Playable();
+
+	// GameObjects from Scenes must use ExposedReferences
+	public ExposedReference<GameObject> exposedReference;
+	
+	// Create the runtime version of the clip, by creating a copy of the template
+	public override PlayableHandle CreatePlayable(PlayableGraph graph, GameObject go)
+    {
+		var handle = graph.CloneScriptPlayable(template);
+		handle.GetObject<#SCRIPTNAME#Playable>().sceneReference = exposedReference.Resolve(graph.resolver);
+		return handle;
+    }
+	
+	// Use this to tell the Timeline Editor what features this clip supports
+	public ClipCaps clipCaps 
+	{
+		get { return ClipCaps.None; }
+	}
+}
