@@ -63,11 +63,14 @@ namespace UnityEngine.Playables
         {
             get
             {
-                return referenceObject as Animator;
+                return LegacyPlayableRuntime.GetAnimationOutputTarget(
+                    m_Output);
             }
             set
             {
-                referenceObject = value;
+                LegacyPlayableRuntime.SetAnimationOutputTarget(
+                    m_Output,
+                    value);
             }
         }
 

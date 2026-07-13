@@ -7,7 +7,7 @@ namespace UnityEngine.Playables
     /// <summary>
     /// Managed PlayableDirector for the standalone Legacy Timeline runtime.
     /// </summary>
-    public class PlayableDirector : Behaviour, IExposedPropertyTable
+    public class PlayableDirector : MonoBehaviour, IExposedPropertyTable
     {
         [SerializeField]
         private PlayableAsset m_PlayableAsset;
@@ -122,7 +122,10 @@ namespace UnityEngine.Playables
                 m_DeferredEvaluate = false;
                 Evaluate();
             }
+        }
 
+        private void LateUpdate()
+        {
             if (m_State != PlayState.Playing ||
                 !m_Graph.IsValid() ||
                 m_TimeUpdateMode == DirectorUpdateMode.Manual)
@@ -406,6 +409,18 @@ namespace UnityEngine.Playables
                 }
 
                 output.target = animator;
+
+                Debug.Log(
+                    "[PlayableDirector] Animation output " +
+                    i +
+                    " binding key=" +
+                    (key != null ? key.name : "null") +
+                    " target=" +
+                    (animator != null ? animator.name : "null") +
+                    " sourceValid=" +
+                    output.sourcePlayable.IsValid() +
+                    " weight=" +
+                    output.weight.ToString("F3"));
             }
 
             int audioCount =

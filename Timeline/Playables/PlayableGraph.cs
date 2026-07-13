@@ -579,6 +579,7 @@ namespace UnityEngine.Playables
             internal string Name;
             internal OutputKind Kind;
             internal UnityEngine.Object ReferenceObject;
+            internal Animator AnimationTarget;
             internal UnityEngine.Object UserData;
             internal PlayableHandle SourcePlayable;
             internal int SourceInputPort;
@@ -934,7 +935,7 @@ namespace UnityEngine.Playables
                 }
 
                 Animator animator =
-                    outputState.ReferenceObject as Animator;
+                    outputState.AnimationTarget;
 
                 if (animator == null ||
                     !outputState.SourcePlayable.IsValid())
@@ -1759,6 +1760,19 @@ namespace UnityEngine.Playables
                 name,
                 OutputKind.Animation,
                 out output);
+        }
+
+        internal static Animator GetAnimationOutputTarget(
+            PlayableOutput output)
+        {
+            return GetOutputOrThrow(output).AnimationTarget;
+        }
+
+        internal static void SetAnimationOutputTarget(
+            PlayableOutput output,
+            Animator target)
+        {
+            GetOutputOrThrow(output).AnimationTarget = target;
         }
 
         internal static int GetAnimationOutputCount(
