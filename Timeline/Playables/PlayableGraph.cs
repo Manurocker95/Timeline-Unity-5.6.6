@@ -527,6 +527,7 @@ namespace UnityEngine.Playables
             internal Type PlayableType;
 
             internal AnimationClip AnimationClip;
+            internal AnimationClip AnimatedProperties;
             internal AudioClip AudioClip;
             internal bool AudioLooped;
             internal bool AudioMixerNormalizeVolumes;
@@ -1993,6 +1994,20 @@ namespace UnityEngine.Playables
             state.AudioDSPType = dspType;
             state.AudioDSPDriver = driver;
             state.AudioDSPParameters = parameters;
+        }
+
+        internal static AnimationClip GetAnimatedProperties(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimatedProperties;
+        }
+
+        internal static void SetAnimatedProperties(
+            PlayableHandle playable,
+            AnimationClip animatedProperties)
+        {
+            GetPlayableOrThrow(playable).AnimatedProperties =
+                animatedProperties;
         }
 
         internal static AnimationClip GetAnimationClip(
