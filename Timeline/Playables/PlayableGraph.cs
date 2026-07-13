@@ -533,6 +533,24 @@ namespace UnityEngine.Playables
             internal Vector3 AnimationOffsetPosition;
             internal Quaternion AnimationOffsetRotation = Quaternion.identity;
 
+            internal readonly Dictionary<int, float> AnimatorFloats =
+                new Dictionary<int, float>();
+            internal readonly Dictionary<int, bool> AnimatorBools =
+                new Dictionary<int, bool>();
+            internal readonly Dictionary<int, int> AnimatorIntegers =
+                new Dictionary<int, int>();
+            internal readonly HashSet<int> AnimatorTriggers =
+                new HashSet<int>();
+            internal readonly Dictionary<int, float> AnimatorLayerWeights =
+                new Dictionary<int, float>();
+            internal readonly Dictionary<int, string> AnimatorResolvedHashes =
+                new Dictionary<int, string>();
+
+            internal int AnimatorStateHash;
+            internal int AnimatorStateLayer = -1;
+            internal float AnimatorStateTime = float.NegativeInfinity;
+            internal bool AnimatorTransitioning;
+
             internal readonly Dictionary<int, float> InputWeights =
                 new Dictionary<int, float>();
         }
@@ -1232,6 +1250,257 @@ namespace UnityEngine.Playables
             PlayableHandle playable)
         {
             return GetPlayableOrThrow(playable).AnimationOffsetRotation;
+        }
+
+        internal static void SetAnimationOffsetPosition(
+            PlayableHandle playable,
+            Vector3 position)
+        {
+            GetPlayableOrThrow(playable).AnimationOffsetPosition = position;
+        }
+
+        internal static void SetAnimationOffsetRotation(
+            PlayableHandle playable,
+            Quaternion rotation)
+        {
+            GetPlayableOrThrow(playable).AnimationOffsetRotation = rotation;
+        }
+
+        internal static float GetAnimatorFloat(
+            PlayableHandle playable,
+            int id)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            float value;
+            return state.AnimatorFloats.TryGetValue(id, out value)
+                ? value
+                : 0f;
+        }
+
+        internal static void SetAnimatorFloat(
+            PlayableHandle playable,
+            int id,
+            float value)
+        {
+            GetPlayableOrThrow(playable).AnimatorFloats[id] = value;
+        }
+
+        internal static bool GetAnimatorBool(
+            PlayableHandle playable,
+            int id)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            bool value;
+            return state.AnimatorBools.TryGetValue(id, out value) && value;
+        }
+
+        internal static void SetAnimatorBool(
+            PlayableHandle playable,
+            int id,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimatorBools[id] = value;
+        }
+
+        internal static int GetAnimatorInteger(
+            PlayableHandle playable,
+            int id)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            int value;
+            return state.AnimatorIntegers.TryGetValue(id, out value)
+                ? value
+                : 0;
+        }
+
+        internal static void SetAnimatorInteger(
+            PlayableHandle playable,
+            int id,
+            int value)
+        {
+            GetPlayableOrThrow(playable).AnimatorIntegers[id] = value;
+        }
+
+        internal static void SetAnimatorTrigger(
+            PlayableHandle playable,
+            int id)
+        {
+            GetPlayableOrThrow(playable).AnimatorTriggers.Add(id);
+        }
+
+        internal static void ResetAnimatorTrigger(
+            PlayableHandle playable,
+            int id)
+        {
+            GetPlayableOrThrow(playable).AnimatorTriggers.Remove(id);
+        }
+
+        internal static bool IsAnimatorParameterControlledByCurve(
+            PlayableHandle playable,
+            int id)
+        {
+            return false;
+        }
+
+        internal static int GetAnimatorLayerCount(
+            PlayableHandle playable)
+        {
+            RuntimeAnimatorController controller =
+                GetPlayableOrThrow(playable).AnimatorController;
+
+            return controller != null ? 1 : 0;
+        }
+
+        internal static string GetAnimatorLayerName(
+            PlayableHandle playable,
+            int layerIndex)
+        {
+            if (layerIndex != 0 || GetAnimatorLayerCount(playable) == 0)
+                throw new ArgumentOutOfRangeException("layerIndex");
+
+            return "Base Layer";
+        }
+
+        internal static int GetAnimatorLayerIndex(
+            PlayableHandle playable,
+            string layerName)
+        {
+            if (String.Equals(layerName, "Base Layer"))
+                return 0;
+
+            return -1;
+        }
+
+        internal static float GetAnimatorLayerWeight(
+            PlayableHandle playable,
+            int layerIndex)
+        {
+            if (layerIndex < 0)
+                throw new ArgumentOutOfRangeException("layerIndex");
+
+            PlayableState state = GetPlayableOrThrow(playable);
+            float weight;
+
+            if (state.AnimatorLayerWeights.TryGetValue(
+                layerIndex,
+                out weight))
+            {
+                return weight;
+            }
+
+            return layerIndex == 0 ? 1f : 0f;
+        }
+
+        internal static void SetAnimatorLayerWeight(
+            PlayableHandle playable,
+            int layerIndex,
+            float weight)
+        {
+            if (layerIndex < 0)
+                throw new ArgumentOutOfRangeException("layerIndex");
+
+            GetPlayableOrThrow(playable).AnimatorLayerWeights[layerIndex] =
+                weight;
+        }
+
+        internal static string ResolveAnimatorHash(
+            PlayableHandle playable,
+            int hash)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            string value;
+
+            return state.AnimatorResolvedHashes.TryGetValue(hash, out value)
+                ? value
+                : hash.ToString();
+        }
+
+        internal static bool IsAnimatorInTransition(
+            PlayableHandle playable,
+            int layerIndex)
+        {
+            return GetPlayableOrThrow(playable).AnimatorTransitioning;
+        }
+
+        internal static int GetAnimatorParameterCount(
+            PlayableHandle playable)
+        {
+            return GetAnimatorParameters(playable).Length;
+        }
+
+        internal static AnimatorControllerParameter[] GetAnimatorParameters(
+            PlayableHandle playable)
+        {
+            RuntimeAnimatorController controller =
+                GetPlayableOrThrow(playable).AnimatorController;
+
+            return new AnimatorControllerParameter[0];
+        }
+
+        internal static void AnimatorCrossFadeInFixedTime(
+            PlayableHandle playable,
+            int stateNameHash,
+            float transitionDuration,
+            int layer,
+            float fixedTime)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimatorStateHash = stateNameHash;
+            state.AnimatorStateLayer = layer;
+            state.AnimatorStateTime = fixedTime;
+            state.AnimatorTransitioning = transitionDuration > 0f;
+        }
+
+        internal static void AnimatorCrossFade(
+            PlayableHandle playable,
+            int stateNameHash,
+            float transitionDuration,
+            int layer,
+            float normalizedTime)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimatorStateHash = stateNameHash;
+            state.AnimatorStateLayer = layer;
+            state.AnimatorStateTime = normalizedTime;
+            state.AnimatorTransitioning = transitionDuration > 0f;
+        }
+
+        internal static void AnimatorPlayInFixedTime(
+            PlayableHandle playable,
+            int stateNameHash,
+            int layer,
+            float fixedTime)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimatorStateHash = stateNameHash;
+            state.AnimatorStateLayer = layer;
+            state.AnimatorStateTime = fixedTime;
+            state.AnimatorTransitioning = false;
+        }
+
+        internal static void AnimatorPlay(
+            PlayableHandle playable,
+            int stateNameHash,
+            int layer,
+            float normalizedTime)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimatorStateHash = stateNameHash;
+            state.AnimatorStateLayer = layer;
+            state.AnimatorStateTime = normalizedTime;
+            state.AnimatorTransitioning = false;
+        }
+
+        internal static bool AnimatorHasState(
+            PlayableHandle playable,
+            int layerIndex,
+            int stateID)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+
+            return state.AnimatorStateHash == stateID &&
+                   (state.AnimatorStateLayer == layerIndex ||
+                    state.AnimatorStateLayer == -1);
         }
 
         internal static int GetRootPlayableCount(PlayableGraph graph)
