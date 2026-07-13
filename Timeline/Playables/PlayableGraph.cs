@@ -645,14 +645,66 @@ namespace UnityEngine.Playables
         internal static void Play(PlayableGraph graph)
         {
             GraphState state = GetGraphOrThrow(graph);
+
             state.IsPlaying = true;
             state.IsDone = false;
+
+            long[] playableIds =
+                new long[state.Playables.Count];
+
+            state.Playables.CopyTo(playableIds);
+
+            for (int i = 0; i < playableIds.Length; ++i)
+            {
+                PlayableState playableState;
+
+                if (!s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
+                    continue;
+                }
+
+                if (!playableState.IsDone)
+                    playableState.PlayState = PlayState.Playing;
+            }
         }
 
         internal static void Stop(PlayableGraph graph)
         {
             GraphState state = GetGraphOrThrow(graph);
+
             state.IsPlaying = false;
+
+            long[] playableIds =
+                new long[state.Playables.Count];
+
+            state.Playables.CopyTo(playableIds);
+
+            for (int i = 0; i < playableIds.Length; ++i)
+            {
+                PlayableState playableState;
+
+                if (s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
+                    playableState.PlayState = PlayState.Paused;
+                }
+            }
+
+            foreach (long outputId in state.Outputs)
+            {
+                OutputState outputState;
+
+                if (s_Outputs.TryGetValue(
+                    outputId,
+                    out outputState) &&
+                    outputState.Kind == OutputKind.Audio)
+                {
+                    PauseRuntimeAudioSource(outputState);
+                }
+            }
         }
 
         internal static int GetPlayableCount(PlayableGraph graph)
