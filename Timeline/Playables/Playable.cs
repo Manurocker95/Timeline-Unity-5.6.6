@@ -1,49 +1,134 @@
-﻿using System;
-using UnityEngine.Scripting;
-
 namespace UnityEngine.Playables
 {
-	/// <summary>
-	///   <para>Playables are customizable runtime objects that can be connected together in a tree to create complex behaviours.</para>
-	/// </summary>
-	// Token: 0x020000E9 RID: 233
-	
-	public class Playable : IPlayable
-	{
-		// Token: 0x060010DD RID: 4317 RVA: 0x0001690C File Offset: 0x00014B0C
-		public static implicit operator PlayableHandle(Playable b)
-		{
-			return b.handle;
-		}
+    /// <summary>
+    /// Base managed playable object used by Legacy Timeline.
+    /// </summary>
+    public class Playable : IPlayable
+    {
+        public static implicit operator PlayableHandle(Playable playable)
+        {
+            return playable != null
+                ? playable.handle
+                : PlayableHandle.Null;
+        }
 
-		/// <summary>
-		///   <para>Returns true if the Playable is valid. A playable can be invalid if it was disposed. This is different from a Null playable.</para>
-		/// </summary>
-		// Token: 0x060010DE RID: 4318 RVA: 0x00016928 File Offset: 0x00014B28
-		public bool IsValid()
-		{
-			return this.handle.IsValid();
-		}
+        public PlayableHandle playableHandle
+        {
+            get { return handle; }
+            set { handle = value; }
+        }
 
-		// Token: 0x170003AC RID: 940
-		// (get) Token: 0x060010DF RID: 4319 RVA: 0x00016948 File Offset: 0x00014B48
-		// (set) Token: 0x060010E0 RID: 4320 RVA: 0x00016964 File Offset: 0x00014B64
-		public PlayableHandle playableHandle
-		{
-			get
-			{
-				return this.handle;
-			}
-			set
-			{
-				this.handle = value;
-			}
-		}
+        public bool IsValid()
+        {
+            return handle.IsValid();
+        }
 
-		/// <summary>
-		///   <para>Returns the PlayableHandle for this playable.</para>
-		/// </summary>
-		// Token: 0x0400022F RID: 559
-		public PlayableHandle handle;
-	}
+        public void Play()
+        {
+            if (handle.IsValid())
+                handle.playState = PlayState.Playing;
+        }
+
+        public void Pause()
+        {
+            if (handle.IsValid())
+                handle.playState = PlayState.Paused;
+        }
+
+        public PlayState GetPlayState()
+        {
+            return handle.IsValid()
+                ? handle.playState
+                : PlayState.Paused;
+        }
+
+        public void SetTime(double value)
+        {
+            if (handle.IsValid())
+                handle.time = value;
+        }
+
+        public double GetTime()
+        {
+            return handle.IsValid() ? handle.time : 0.0;
+        }
+
+        public void SetSpeed(double value)
+        {
+            if (handle.IsValid())
+                handle.speed = value;
+        }
+
+        public double GetSpeed()
+        {
+            return handle.IsValid() ? handle.speed : 0.0;
+        }
+
+        public void SetDuration(double value)
+        {
+            if (handle.IsValid())
+                handle.duration = value;
+        }
+
+        public double GetDuration()
+        {
+            return handle.IsValid() ? handle.duration : 0.0;
+        }
+
+        public Playable GetInput(int inputPort)
+        {
+            if (!handle.IsValid())
+                return null;
+
+            PlayableHandle input = handle.GetInput(inputPort);
+            return input.IsValid()
+                ? input.GetObject<Playable>()
+                : null;
+        }
+
+        public PlayableHandle GetInputHandle(int inputPort)
+        {
+            return handle.IsValid()
+                ? handle.GetInput(inputPort)
+                : PlayableHandle.Null;
+        }
+
+        public bool SetInputWeight(int inputPort, float weight)
+        {
+            return handle.IsValid() &&
+                   handle.SetInputWeight(inputPort, weight);
+        }
+
+        public bool SetInputWeight(Playable input, float weight)
+        {
+            return input != null &&
+                   SetInputWeight(input.handle, weight);
+        }
+
+        public bool SetInputWeight(PlayableHandle input, float weight)
+        {
+            return handle.IsValid() &&
+                   handle.SetInputWeight(input, weight);
+        }
+
+        public float GetInputWeight(int inputPort)
+        {
+            return handle.IsValid()
+                ? handle.GetInputWeight(inputPort)
+                : 0f;
+        }
+
+        public int GetInputCount()
+        {
+            return handle.IsValid() ? handle.inputCount : 0;
+        }
+
+        public void SetInputCount(int value)
+        {
+            if (handle.IsValid())
+                handle.inputCount = value;
+        }
+
+        public PlayableHandle handle;
+    }
 }

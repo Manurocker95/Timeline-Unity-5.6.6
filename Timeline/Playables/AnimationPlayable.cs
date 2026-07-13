@@ -1,14 +1,19 @@
-﻿using System;
-using UnityEngine.Scripting;
-
 namespace UnityEngine.Playables
 {
-	/// <summary>
-	///   <para>Base class for all animation related Playable classes.</para>
-	/// </summary>
-	// Token: 0x02000263 RID: 611
-	
-	public class AnimationPlayable : Playable
-	{
-	}
+    /// <summary>
+    /// Base class for managed animation playables.
+    /// </summary>
+    public class AnimationPlayable : Playable
+    {
+        public new AnimationPlayable GetInput(int inputPort)
+        {
+            if (!handle.IsValid())
+                return null;
+
+            PlayableHandle input = handle.GetInput(inputPort);
+            return input.IsValid()
+                ? input.GetObject<AnimationPlayable>()
+                : null;
+        }
+    }
 }

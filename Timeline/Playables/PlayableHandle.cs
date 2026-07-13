@@ -329,9 +329,20 @@ namespace UnityEngine.Playables
             LegacyPlayableRuntime.SetInputWeight(playable, input, weight);
         }
 
-        public void SetInputWeight(PlayableHandle input, float weight)
+        public void SetInputWeightOld(PlayableHandle input, float weight)
         {
             SetInputWeightInternal(ref this, ref input, weight);
+        }
+
+        public bool SetInputWeight(
+            PlayableHandle input,
+            float weight)
+        {
+            if (!IsValid() || !input.IsValid())
+                return false;
+
+            SetInputWeightInternal(ref this, ref input, weight);
+            return true;
         }
 
         public void Destroy()

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine.Audio;
 using UnityEngine.Internal;
@@ -538,6 +538,10 @@ namespace UnityEngine.Playables
             internal bool AnimationRemoveStartOffset;
             internal bool AnimationMixerNormalizeWeights;
             internal bool AnimationLayerMixer;
+            internal readonly Dictionary<uint, AvatarMask> AnimationLayerMasks =
+                new Dictionary<uint, AvatarMask>();
+            internal readonly Dictionary<uint, bool> AnimationLayerAdditive =
+                new Dictionary<uint, bool>();
             internal bool AnimationMotionXToDelta;
             internal RuntimeAnimatorController AnimatorController;
             internal Vector3 AnimationOffsetPosition;
@@ -2052,6 +2056,54 @@ namespace UnityEngine.Playables
             bool value)
         {
             GetPlayableOrThrow(playable).AnimationLayerMixer = value;
+        }
+
+        internal static void SetAnimationLayerMask(
+            PlayableHandle playable,
+            uint layerIndex,
+            AvatarMask mask)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+
+            if (mask == null)
+                state.AnimationLayerMasks.Remove(layerIndex);
+            else
+                state.AnimationLayerMasks[layerIndex] = mask;
+        }
+
+        internal static AvatarMask GetAnimationLayerMask(
+            PlayableHandle playable,
+            uint layerIndex)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            AvatarMask mask;
+
+            return state.AnimationLayerMasks.TryGetValue(
+                layerIndex,
+                out mask)
+                ? mask
+                : null;
+        }
+
+        internal static void SetAnimationLayerAdditive(
+            PlayableHandle playable,
+            uint layerIndex,
+            bool value)
+        {
+            GetPlayableOrThrow(playable)
+                .AnimationLayerAdditive[layerIndex] = value;
+        }
+
+        internal static bool GetAnimationLayerAdditive(
+            PlayableHandle playable,
+            uint layerIndex)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            bool value;
+
+            return state.AnimationLayerAdditive.TryGetValue(
+                layerIndex,
+                out value) && value;
         }
 
         internal static void SetAnimationMotionXToDelta(

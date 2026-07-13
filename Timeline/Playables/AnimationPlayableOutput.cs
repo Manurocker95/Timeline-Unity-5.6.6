@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace UnityEngine.Playables
 {
@@ -7,6 +7,16 @@ namespace UnityEngine.Playables
     /// </summary>
     public struct AnimationPlayableOutput
     {
+        public static AnimationPlayableOutput Create(
+            PlayableGraph graph,
+            string name,
+            Animator target)
+        {
+            return graph.CreateAnimationOutput(
+                name,
+                target);
+        }
+
         public static AnimationPlayableOutput Null
         {
             get
@@ -114,6 +124,33 @@ namespace UnityEngine.Playables
                     ref m_Output,
                     value);
             }
+        }
+
+        public void SetSourcePlayable(Playable playable)
+        {
+            sourcePlayable = playable != null
+                ? playable.handle
+                : PlayableHandle.Null;
+        }
+
+        public void SetSourcePlayable(PlayableHandle playable)
+        {
+            sourcePlayable = playable;
+        }
+
+        public PlayableHandle GetSourcePlayable()
+        {
+            return sourcePlayable;
+        }
+
+        public void SetTarget(Animator animator)
+        {
+            target = animator;
+        }
+
+        public Animator GetTarget()
+        {
+            return target;
         }
 
         internal PlayableOutput m_Output;

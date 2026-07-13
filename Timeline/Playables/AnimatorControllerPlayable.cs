@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine.Internal;
 
@@ -6,6 +6,18 @@ namespace UnityEngine.Playables
 {
     public class AnimatorControllerPlayable : AnimationPlayable
     {
+        public static AnimatorControllerPlayable Create(
+            PlayableGraph graph,
+            RuntimeAnimatorController controller)
+        {
+            PlayableHandle handle =
+                graph.CreateAnimatorControllerPlayable(controller);
+
+            return handle.IsValid()
+                ? handle.GetObject<AnimatorControllerPlayable>()
+                : null;
+        }
+
         public static implicit operator PlayableHandle(
             AnimatorControllerPlayable playable)
         {

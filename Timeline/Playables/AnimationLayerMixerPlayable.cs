@@ -1,14 +1,57 @@
-﻿using System;
-using UnityEngine.Scripting;
-
 namespace UnityEngine.Playables
 {
-	/// <summary>
-	///   <para>Playable used to mix AnimationPlayables when used in Layers.</para>
-	/// </summary>
-	// Token: 0x02000261 RID: 609
-	
-	public class AnimationLayerMixerPlayable : AnimationPlayable
-	{
-	}
+    public class AnimationLayerMixerPlayable : AnimationPlayable
+    {
+        public static AnimationLayerMixerPlayable Create(
+            PlayableGraph graph,
+            int inputCount)
+        {
+            PlayableHandle handle =
+                graph.CreateAnimationLayerMixerPlayable(inputCount);
+
+            if (!handle.IsValid())
+                return null;
+
+            LegacyPlayableRuntime.SetPlayableType(
+                handle,
+                typeof(AnimationLayerMixerPlayable));
+
+            return handle.GetObject<AnimationLayerMixerPlayable>();
+        }
+
+        public void SetLayerMaskFromAvatarMask(
+            uint layerIndex,
+            AvatarMask mask)
+        {
+            LegacyPlayableRuntime.SetAnimationLayerMask(
+                handle,
+                layerIndex,
+                mask);
+        }
+
+        public AvatarMask GetLayerMaskFromAvatarMask(
+            uint layerIndex)
+        {
+            return LegacyPlayableRuntime.GetAnimationLayerMask(
+                handle,
+                layerIndex);
+        }
+
+        public void SetLayerAdditive(
+            uint layerIndex,
+            bool value)
+        {
+            LegacyPlayableRuntime.SetAnimationLayerAdditive(
+                handle,
+                layerIndex,
+                value);
+        }
+
+        public bool IsLayerAdditive(uint layerIndex)
+        {
+            return LegacyPlayableRuntime.GetAnimationLayerAdditive(
+                handle,
+                layerIndex);
+        }
+    }
 }
