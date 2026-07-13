@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine.Internal;
 using UnityEngine.Scripting;
 
@@ -500,7 +499,6 @@ namespace UnityEngine.Playables
             internal bool IsPlaying;
             internal bool IsDone;
             internal double Time;
-            internal ulong FrameId;
             internal IExposedPropertyTable Resolver;
 
             internal readonly HashSet<long> Playables = new HashSet<long>();
@@ -524,8 +522,26 @@ namespace UnityEngine.Playables
             internal bool PropagateSetTime = true;
             internal object ScriptInstance;
             internal Type PlayableType;
+
+            internal AnimationClip AnimationClip;
+            internal bool AnimationApplyFootIK;
+            internal bool AnimationRemoveStartOffset;
+            internal bool AnimationMixerNormalizeWeights;
+            internal bool AnimationLayerMixer;
+            internal bool AnimationMotionXToDelta;
+            internal RuntimeAnimatorController AnimatorController;
+            internal Vector3 AnimationOffsetPosition;
+            internal Quaternion AnimationOffsetRotation = Quaternion.identity;
+
             internal readonly Dictionary<int, float> InputWeights =
                 new Dictionary<int, float>();
+        }
+
+        private enum OutputKind
+        {
+            Script,
+            Animation,
+            Audio
         }
 
         private sealed class OutputState
@@ -533,6 +549,7 @@ namespace UnityEngine.Playables
             internal int Version;
             internal long GraphId;
             internal string Name;
+            internal OutputKind Kind;
             internal UnityEngine.Object ReferenceObject;
             internal UnityEngine.Object UserData;
             internal PlayableHandle SourcePlayable;
@@ -597,89 +614,15 @@ namespace UnityEngine.Playables
 
         internal static void Play(PlayableGraph graph)
         {
-            GraphState graphState = GetGraphOrThrow(graph);
-
-            if (graphState.IsPlaying)
-                return;
-
-            graphState.IsPlaying = true;
-            graphState.IsDone = false;
-
-            FrameData info = CreateFrameData(
-                graphState,
-                0f,
-                FrameData.EvaluationType.Playback,
-                false,
-                1f,
-                1f);
-
-            long[] playableIds = CopyPlayableIds(graphState);
-            for (int i = 0; i < playableIds.Length; ++i)
-            {
-                PlayableState playableState;
-                if (!s_Playables.TryGetValue(playableIds[i], out playableState))
-                    continue;
-
-                IScriptPlayable scriptPlayable =
-                    playableState.ScriptInstance as IScriptPlayable;
-
-                if (scriptPlayable == null)
-                    continue;
-
-                scriptPlayable.OnGraphStart();
-
-                if (playableState.PlayState != PlayState.Playing)
-                {
-                    playableState.PlayState = PlayState.Playing;
-                    scriptPlayable.OnPlayStateChanged(
-                        CreateFrameDataForPlayable(
-                            graphState,
-                            playableState,
-                            0f,
-                            FrameData.EvaluationType.Playback,
-                            false),
-                        PlayState.Playing);
-                }
-            }
+            GraphState state = GetGraphOrThrow(graph);
+            state.IsPlaying = true;
+            state.IsDone = false;
         }
 
         internal static void Stop(PlayableGraph graph)
         {
-            GraphState graphState = GetGraphOrThrow(graph);
-
-            if (!graphState.IsPlaying)
-                return;
-
-            graphState.IsPlaying = false;
-
-            long[] playableIds = CopyPlayableIds(graphState);
-            for (int i = 0; i < playableIds.Length; ++i)
-            {
-                PlayableState playableState;
-                if (!s_Playables.TryGetValue(playableIds[i], out playableState))
-                    continue;
-
-                IScriptPlayable scriptPlayable =
-                    playableState.ScriptInstance as IScriptPlayable;
-
-                if (scriptPlayable == null)
-                    continue;
-
-                if (playableState.PlayState != PlayState.Paused)
-                {
-                    playableState.PlayState = PlayState.Paused;
-                    scriptPlayable.OnPlayStateChanged(
-                        CreateFrameDataForPlayable(
-                            graphState,
-                            playableState,
-                            0f,
-                            FrameData.EvaluationType.Playback,
-                            false),
-                        PlayState.Paused);
-                }
-
-                scriptPlayable.OnGraphStop();
-            }
+            GraphState state = GetGraphOrThrow(graph);
+            state.IsPlaying = false;
         }
 
         internal static int GetPlayableCount(PlayableGraph graph)
@@ -690,31 +633,24 @@ namespace UnityEngine.Playables
 
         internal static void Evaluate(PlayableGraph graph, float deltaTime)
         {
-            GraphState graphState = GetGraphOrThrow(graph);
+            GraphState state = GetGraphOrThrow(graph);
 
             if (deltaTime < 0f)
-            {
                 throw new ArgumentOutOfRangeException(
                     "deltaTime",
                     "PlayableGraph cannot be evaluated with a negative delta time.");
-            }
 
-            graphState.Time += deltaTime;
-            graphState.FrameId++;
-
+            state.Time += deltaTime;
             bool hasPlayable = false;
             bool allDone = true;
-            long[] playableIds = CopyPlayableIds(graphState);
 
-            // First pass: update time and notify state changes.
-            for (int i = 0; i < playableIds.Length; ++i)
+            foreach (long playableId in state.Playables)
             {
                 PlayableState playableState;
-                if (!s_Playables.TryGetValue(playableIds[i], out playableState))
+                if (!s_Playables.TryGetValue(playableId, out playableState))
                     continue;
 
                 hasPlayable = true;
-                PlayState previousState = playableState.PlayState;
 
                 if (playableState.PlayState == PlayState.Playing &&
                     !playableState.IsDone)
@@ -730,87 +666,11 @@ namespace UnityEngine.Playables
                     }
                 }
 
-                IScriptPlayable scriptPlayable =
-                    playableState.ScriptInstance as IScriptPlayable;
-
-                if (scriptPlayable != null &&
-                    previousState != playableState.PlayState)
-                {
-                    scriptPlayable.OnPlayStateChanged(
-                        CreateFrameDataForPlayable(
-                            graphState,
-                            playableState,
-                            deltaTime,
-                            FrameData.EvaluationType.Evaluate,
-                            false),
-                        playableState.PlayState);
-                }
-
                 if (!playableState.IsDone)
                     allDone = false;
             }
 
-            // Second pass: PrepareFrame for every managed ScriptPlayable.
-            for (int i = 0; i < playableIds.Length; ++i)
-            {
-                PlayableState playableState;
-                if (!s_Playables.TryGetValue(playableIds[i], out playableState))
-                    continue;
-
-                IScriptPlayable scriptPlayable =
-                    playableState.ScriptInstance as IScriptPlayable;
-
-                if (scriptPlayable == null)
-                    continue;
-
-                scriptPlayable.PrepareFrame(
-                    CreateFrameDataForPlayable(
-                        graphState,
-                        playableState,
-                        deltaTime,
-                        FrameData.EvaluationType.Evaluate,
-                        false));
-            }
-
-            // Third pass: ProcessFrame only for playables bound to valid outputs.
-            long[] outputIds = CopyOutputIds(graphState);
-            for (int i = 0; i < outputIds.Length; ++i)
-            {
-                OutputState outputState;
-                if (!s_Outputs.TryGetValue(outputIds[i], out outputState))
-                    continue;
-
-                if (!outputState.SourcePlayable.IsValid())
-                    continue;
-
-                PlayableState playableState;
-                if (!TryGetPlayable(
-                    outputState.SourcePlayable,
-                    out playableState))
-                {
-                    continue;
-                }
-
-                IScriptPlayable scriptPlayable =
-                    playableState.ScriptInstance as IScriptPlayable;
-
-                if (scriptPlayable == null)
-                    continue;
-
-                FrameData info = CreateFrameData(
-                    graphState,
-                    deltaTime,
-                    FrameData.EvaluationType.Evaluate,
-                    false,
-                    outputState.Weight,
-                    outputState.Weight);
-
-                scriptPlayable.ProcessFrame(
-                    info,
-                    outputState.UserData);
-            }
-
-            graphState.IsDone = hasPlayable && allDone;
+            state.IsDone = hasPlayable && allDone;
         }
 
         internal static void DestroyGraph(ref PlayableGraph graph)
@@ -824,21 +684,7 @@ namespace UnityEngine.Playables
                 graphState.Playables.CopyTo(playableIds);
 
                 for (int i = 0; i < playableIds.Length; ++i)
-                {
-                    PlayableState playableState;
-                    if (s_Playables.TryGetValue(
-                        playableIds[i],
-                        out playableState))
-                    {
-                        IScriptPlayable scriptPlayable =
-                            playableState.ScriptInstance as IScriptPlayable;
-
-                        if (scriptPlayable != null && graphState.IsPlaying)
-                            scriptPlayable.OnGraphStop();
-                    }
-
                     s_Playables.Remove(playableIds[i]);
-                }
 
                 long[] outputIds = new long[graphState.Outputs.Count];
                 graphState.Outputs.CopyTo(outputIds);
@@ -968,12 +814,6 @@ namespace UnityEngine.Playables
                     "The PlayableHandle does not belong to this PlayableGraph.");
             }
 
-            IScriptPlayable scriptPlayable =
-                playableState.ScriptInstance as IScriptPlayable;
-
-            if (scriptPlayable != null && graphState.IsPlaying)
-                scriptPlayable.OnGraphStop();
-
             RemoveConnectionsForPlayable(graphState, playableId);
             graphState.Playables.Remove(playableId);
             s_Playables.Remove(playableId);
@@ -1029,6 +869,7 @@ namespace UnityEngine.Playables
             state.GraphId = graph.m_Handle.ToInt64();
             state.Version = version;
             state.Name = name ?? string.Empty;
+            state.Kind = OutputKind.Script;
             state.SourcePlayable = PlayableHandle.Null;
             state.SourceInputPort = 0;
             state.Weight = 1f;
@@ -1152,13 +993,55 @@ namespace UnityEngine.Playables
 
         internal static int GetScriptOutputCount(PlayableGraph graph)
         {
-            GraphState graphState = GetGraphOrThrow(graph);
-            return graphState.Outputs.Count;
+            return GetOutputCount(graph, OutputKind.Script);
         }
 
         internal static bool GetScriptOutput(
             PlayableGraph graph,
             int index,
+            out PlayableOutput output)
+        {
+            return GetOutput(
+                graph,
+                index,
+                OutputKind.Script,
+                out output);
+        }
+
+        internal static bool CreateAnimationOutput(
+            PlayableGraph graph,
+            string name,
+            out PlayableOutput output)
+        {
+            return CreateTypedOutput(
+                graph,
+                name,
+                OutputKind.Animation,
+                out output);
+        }
+
+        internal static int GetAnimationOutputCount(
+            PlayableGraph graph)
+        {
+            return GetOutputCount(graph, OutputKind.Animation);
+        }
+
+        internal static bool GetAnimationOutput(
+            PlayableGraph graph,
+            int index,
+            out PlayableOutput output)
+        {
+            return GetOutput(
+                graph,
+                index,
+                OutputKind.Animation,
+                out output);
+        }
+
+        private static bool CreateTypedOutput(
+            PlayableGraph graph,
+            string name,
+            OutputKind kind,
             out PlayableOutput output)
         {
             output = default(PlayableOutput);
@@ -1167,21 +1050,188 @@ namespace UnityEngine.Playables
             if (!TryGetGraph(graph, out graphState))
                 return false;
 
-            if (index < 0 || index >= graphState.Outputs.Count)
+            long id = s_NextOutputId++;
+            int version = s_NextVersion++;
+
+            OutputState state = new OutputState();
+            state.GraphId = graph.m_Handle.ToInt64();
+            state.Version = version;
+            state.Name = name ?? string.Empty;
+            state.Kind = kind;
+            state.SourcePlayable = PlayableHandle.Null;
+            state.SourceInputPort = 0;
+            state.Weight = 1f;
+
+            s_Outputs.Add(id, state);
+            graphState.Outputs.Add(id);
+
+            output.m_Handle = new IntPtr(id);
+            output.m_Version = version;
+            return true;
+        }
+
+        private static int GetOutputCount(
+            PlayableGraph graph,
+            OutputKind kind)
+        {
+            GraphState graphState = GetGraphOrThrow(graph);
+            int count = 0;
+
+            foreach (long outputId in graphState.Outputs)
+            {
+                OutputState state;
+
+                if (s_Outputs.TryGetValue(outputId, out state) &&
+                    state.Kind == kind)
+                {
+                    ++count;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool GetOutput(
+            PlayableGraph graph,
+            int index,
+            OutputKind kind,
+            out PlayableOutput output)
+        {
+            output = default(PlayableOutput);
+
+            GraphState graphState;
+            if (!TryGetGraph(graph, out graphState))
                 return false;
 
-            List<long> outputIds = new List<long>(graphState.Outputs);
+            List<long> outputIds = new List<long>();
+
+            foreach (long outputId in graphState.Outputs)
+            {
+                OutputState candidate;
+
+                if (s_Outputs.TryGetValue(outputId, out candidate) &&
+                    candidate.Kind == kind)
+                {
+                    outputIds.Add(outputId);
+                }
+            }
+
             outputIds.Sort();
 
-            long outputId = outputIds[index];
-            OutputState state;
-
-            if (!s_Outputs.TryGetValue(outputId, out state))
+            if (index < 0 || index >= outputIds.Count)
                 return false;
 
-            output.m_Handle = new IntPtr(outputId);
+            long id = outputIds[index];
+            OutputState state = s_Outputs[id];
+
+            output.m_Handle = new IntPtr(id);
             output.m_Version = state.Version;
             return true;
+        }
+
+        internal static AnimationClip GetAnimationClip(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationClip;
+        }
+
+        internal static void SetAnimationClip(
+            PlayableHandle playable,
+            AnimationClip clip)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimationClip = clip;
+
+            if (clip != null)
+                state.Duration = clip.length;
+        }
+
+        internal static bool GetAnimationApplyFootIK(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationApplyFootIK;
+        }
+
+        internal static void SetAnimationApplyFootIK(
+            PlayableHandle playable,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimationApplyFootIK = value;
+        }
+
+        internal static bool GetAnimationRemoveStartOffset(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationRemoveStartOffset;
+        }
+
+        internal static void SetAnimationRemoveStartOffset(
+            PlayableHandle playable,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimationRemoveStartOffset = value;
+        }
+
+        internal static void SetAnimationMixerNormalizeWeights(
+            PlayableHandle playable,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimationMixerNormalizeWeights = value;
+        }
+
+        internal static bool GetAnimationMixerNormalizeWeights(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationMixerNormalizeWeights;
+        }
+
+        internal static void SetAnimationLayerMixer(
+            PlayableHandle playable,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimationLayerMixer = value;
+        }
+
+        internal static void SetAnimationMotionXToDelta(
+            PlayableHandle playable,
+            bool value)
+        {
+            GetPlayableOrThrow(playable).AnimationMotionXToDelta = value;
+        }
+
+        internal static void SetAnimatorController(
+            PlayableHandle playable,
+            RuntimeAnimatorController controller)
+        {
+            GetPlayableOrThrow(playable).AnimatorController = controller;
+        }
+
+        internal static RuntimeAnimatorController GetAnimatorController(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimatorController;
+        }
+
+        internal static void SetAnimationOffset(
+            PlayableHandle playable,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AnimationOffsetPosition = position;
+            state.AnimationOffsetRotation = rotation;
+        }
+
+        internal static Vector3 GetAnimationOffsetPosition(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationOffsetPosition;
+        }
+
+        internal static Quaternion GetAnimationOffsetRotation(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationOffsetRotation;
         }
 
         internal static int GetRootPlayableCount(PlayableGraph graph)
@@ -1355,30 +1405,7 @@ namespace UnityEngine.Playables
             PlayableHandle playable,
             PlayState playState)
         {
-            PlayableState state = GetPlayableOrThrow(playable);
-
-            if (state.PlayState == playState)
-                return;
-
-            state.PlayState = playState;
-
-            IScriptPlayable scriptPlayable =
-                state.ScriptInstance as IScriptPlayable;
-
-            if (scriptPlayable != null)
-            {
-                PlayableGraph graph = GetGraph(playable);
-                GraphState graphState = GetGraphOrThrow(graph);
-
-                scriptPlayable.OnPlayStateChanged(
-                    CreateFrameDataForPlayable(
-                        graphState,
-                        state,
-                        0f,
-                        FrameData.EvaluationType.Evaluate,
-                        false),
-                    playState);
-            }
+            GetPlayableOrThrow(playable).PlayState = playState;
         }
 
         internal static double GetSpeed(PlayableHandle playable)
@@ -1580,83 +1607,6 @@ namespace UnityEngine.Playables
 
             throw new InvalidOperationException(
                 "The supplied PlayableHandle is not connected as an input.");
-        }
-
-        private static FrameData CreateFrameDataForPlayable(
-            GraphState graphState,
-            PlayableState playableState,
-            float deltaTime,
-            FrameData.EvaluationType evaluationType,
-            bool seekOccurred)
-        {
-            return CreateFrameData(
-                graphState,
-                deltaTime,
-                evaluationType,
-                seekOccurred,
-                1f,
-                1f,
-                (float)playableState.Speed);
-        }
-
-        private static FrameData CreateFrameData(
-            GraphState graphState,
-            float deltaTime,
-            FrameData.EvaluationType evaluationType,
-            bool seekOccurred,
-            float weight,
-            float effectiveWeight)
-        {
-            return CreateFrameData(
-                graphState,
-                deltaTime,
-                evaluationType,
-                seekOccurred,
-                weight,
-                effectiveWeight,
-                1f);
-        }
-
-        private static FrameData CreateFrameData(
-            GraphState graphState,
-            float deltaTime,
-            FrameData.EvaluationType evaluationType,
-            bool seekOccurred,
-            float weight,
-            float effectiveWeight,
-            float effectiveSpeed)
-        {
-            FrameData info = default(FrameData);
-            info.m_FrameID = graphState.FrameId;
-            info.m_DeltaTime = deltaTime;
-            info.m_Weight = weight;
-            info.m_EffectiveWeight = effectiveWeight;
-            info.m_EffectiveSpeed = effectiveSpeed;
-            info.m_Flags = 0;
-
-            if (evaluationType == FrameData.EvaluationType.Evaluate)
-                info.m_Flags |= FrameData.Flags.Evaluate;
-
-            if (seekOccurred)
-                info.m_Flags |= FrameData.Flags.SeekOccured;
-
-            return info;
-        }
-
-        private static long[] CopyPlayableIds(GraphState graphState)
-        {
-            long[] ids = new long[graphState.Playables.Count];
-            graphState.Playables.CopyTo(ids);
-            Array.Sort(ids);
-            return ids;
-        }
-
-        private static long[] CopyOutputIds(GraphState graphState)
-        {
-            long[] ids = new long[graphState.Outputs.Count];
-            graphState.Outputs.CopyTo(ids);
-            Array.Sort(ids);
-            return ids;
         }
 
         private static PlayableHandle CreateHandle(long playableId)
