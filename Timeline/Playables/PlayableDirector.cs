@@ -1,260 +1,449 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
-using UnityEngine.Scripting;
+using System.Collections.Generic;
+using UnityEngine.Audio;
 
 namespace UnityEngine.Playables
 {
-	/// <summary>
-	///   <para>Instantiates a PlayableAsset and controls playback of Playable objects.</para>
-	/// </summary>
-	// Token: 0x02000306 RID: 774
-	public class PlayableDirector : Behaviour, IExposedPropertyTable
-	{
-		/// <summary>
-		///   <para>The current playing state of the component. (Read Only)</para>
-		/// </summary>
-		// Token: 0x17000B6A RID: 2922
-		// (get) Token: 0x06003008 RID: 12296
-		public extern PlayState state {   [MethodImpl(4096)] get; }
+    /// <summary>
+    /// Managed PlayableDirector for the standalone Legacy Timeline runtime.
+    /// </summary>
+    public class PlayableDirector : Behaviour, IExposedPropertyTable
+    {
+        [SerializeField]
+        private PlayableAsset m_PlayableAsset;
 
-		/// <summary>
-		///   <para>The PlayableAsset that is used to instantiate a playable for playback.</para>
-		/// </summary>
-		// Token: 0x17000B6B RID: 2923
-		// (get) Token: 0x06003009 RID: 12297 RVA: 0x000444C4 File Offset: 0x000426C4
-		// (set) Token: 0x0600300A RID: 12298 RVA: 0x000444E4 File Offset: 0x000426E4
-		public PlayableAsset playableAsset
-		{
-			get
-			{
-				return this.GetPlayableAssetInternal() as PlayableAsset;
-			}
-			set
-			{
-				this.SetPlayableAssetInternal(value);
-			}
-		}
+        [SerializeField]
+        private DirectorWrapMode m_WrapMode = DirectorWrapMode.Hold;
 
-		/// <summary>
-		///   <para>Controls how the time is incremented when it goes beyond the duration of the playable.</para>
-		/// </summary>
-		// Token: 0x17000B6C RID: 2924
-		// (get) Token: 0x0600300B RID: 12299
-		// (set) Token: 0x0600300C RID: 12300
-		[Obsolete("Use wrapMode property instead")]
-		public extern DirectorWrapMode extrapolationMode {   [MethodImpl(4096)] get;   [MethodImpl(4096)] set; }
+        [SerializeField]
+        private DirectorUpdateMode m_TimeUpdateMode =
+            DirectorUpdateMode.GameTime;
 
-		/// <summary>
-		///   <para>Describes what to do when the graph is completed playing.</para>
-		/// </summary>
-		// Token: 0x17000B6D RID: 2925
-		// (get) Token: 0x0600300D RID: 12301
-		// (set) Token: 0x0600300E RID: 12302
-		public extern DirectorWrapMode wrapMode {   [MethodImpl(4096)] get;   [MethodImpl(4096)] set; }
+        [SerializeField]
+        private double m_InitialTime;
 
-		/// <summary>
-		///   <para>Controls how time is incremented when playing back.</para>
-		/// </summary>
-		// Token: 0x17000B6E RID: 2926
-		// (get) Token: 0x0600300F RID: 12303
-		// (set) Token: 0x06003010 RID: 12304
-		public extern DirectorUpdateMode timeUpdateMode {   [MethodImpl(4096)] get;   [MethodImpl(4096)] set; }
+        [SerializeField]
+        private bool m_PlayOnAwake;
 
-		/// <summary>
-		///   <para>The component's current time. This value is incremented according to the PlayableDirector.timeUpdateMode when it is playing. You can also change this value manually.</para>
-		/// </summary>
-		// Token: 0x17000B6F RID: 2927
-		// (get) Token: 0x06003011 RID: 12305
-		// (set) Token: 0x06003012 RID: 12306
-		public extern double time {   [MethodImpl(4096)] get;   [MethodImpl(4096)] set; }
+        private PlayableGraph m_Graph;
+        private PlayableHandle m_RootPlayable;
+        private PlayState m_State = PlayState.Paused;
+        private double m_Time;
+        private bool m_DeferredEvaluate;
 
-		/// <summary>
-		///   <para>The time at which the Playable should start when first played.</para>
-		/// </summary>
-		// Token: 0x17000B70 RID: 2928
-		// (get) Token: 0x06003013 RID: 12307
-		// (set) Token: 0x06003014 RID: 12308
-		public extern double initialTime {   [MethodImpl(4096)] get;   [MethodImpl(4096)] set; }
+        private readonly Dictionary<PropertyName, UnityEngine.Object>
+            m_ReferenceValues =
+                new Dictionary<PropertyName, UnityEngine.Object>();
 
-		/// <summary>
-		///   <para>The duration of the Playable in seconds.</para>
-		/// </summary>
-		// Token: 0x17000B71 RID: 2929
-		// (get) Token: 0x06003015 RID: 12309
-		public extern double duration {   [MethodImpl(4096)] get; }
+        private readonly Dictionary<UnityEngine.Object, UnityEngine.Object>
+            m_GenericBindings =
+                new Dictionary<UnityEngine.Object, UnityEngine.Object>();
 
-		/// <summary>
-		///   <para>Evaluates the currently playing Playable at  the current time.</para>
-		/// </summary>
-		// Token: 0x06003016 RID: 12310
-		 
-		[MethodImpl(4096)]
-		public extern void Evaluate();
+        public PlayState state
+        {
+            get { return m_State; }
+        }
 
-		/// <summary>
-		///   <para>Tells the PlayableDirector to evaluate it's PlayableGraph on the next update.</para>
-		/// </summary>
-		// Token: 0x06003017 RID: 12311
-		 
-		[MethodImpl(4096)]
-		public extern void DeferredEvaluate();
+        public PlayableAsset playableAsset
+        {
+            get { return m_PlayableAsset; }
+            set
+            {
+                if (m_PlayableAsset == value)
+                    return;
 
-		/// <summary>
-		///   <para>Instatiates a Playable using the provided PlayableAsset and starts playback.</para>
-		/// </summary>
-		/// <param name="asset">An asset to instantiate a playable from.</param>
-		/// <param name="addMissingComponents">Should required components be added to targetGameObjects if they are missing.</param>
-		/// <param name="playerArray">An array of PlayableDirector player components whose types match the outputs of the playable.</param>
-		/// <param name="targetGameObjects">An array of game objects to extract the PlayableDirector player components from for each playable output.</param>
-		/// <param name="mode">What to do when the time passes the duration of the playable.</param>
-		// Token: 0x06003018 RID: 12312 RVA: 0x000444F0 File Offset: 0x000426F0
-		public void Play(PlayableAsset asset)
-		{
-			if (asset == null)
-			{
-				throw new ArgumentNullException("Argument 'asset' is null");
-			}
-			this.Play(asset, this.wrapMode);
-		}
+                Stop();
+                m_PlayableAsset = value;
+            }
+        }
 
-		// Token: 0x06003019 RID: 12313 RVA: 0x00044518 File Offset: 0x00042718
-		public void Play(PlayableAsset asset, DirectorWrapMode mode)
-		{
-			if (asset == null)
-			{
-				throw new ArgumentNullException("Argument 'asset' is null");
-			}
-			this.playableAsset = asset;
-			this.wrapMode = mode;
-			this.Play();
-		}
+        [Obsolete("Use wrapMode property instead")]
+        public DirectorWrapMode extrapolationMode
+        {
+            get { return m_WrapMode; }
+            set { m_WrapMode = value; }
+        }
 
-		// Token: 0x0600301A RID: 12314
-		 
-		[MethodImpl(4096)]
-		private extern void SetPlayableAssetInternal(ScriptableObject asset);
+        public DirectorWrapMode wrapMode
+        {
+            get { return m_WrapMode; }
+            set { m_WrapMode = value; }
+        }
 
-		// Token: 0x0600301B RID: 12315
-		 
-		[MethodImpl(4096)]
-		private extern ScriptableObject GetPlayableAssetInternal();
+        public DirectorUpdateMode timeUpdateMode
+        {
+            get { return m_TimeUpdateMode; }
+            set { m_TimeUpdateMode = value; }
+        }
 
-		/// <summary>
-		///   <para>Instatiates a Playable using the provided PlayableAsset and starts playback.</para>
-		/// </summary>
-		/// <param name="asset">An asset to instantiate a playable from.</param>
-		/// <param name="addMissingComponents">Should required components be added to targetGameObjects if they are missing.</param>
-		/// <param name="playerArray">An array of PlayableDirector player components whose types match the outputs of the playable.</param>
-		/// <param name="targetGameObjects">An array of game objects to extract the PlayableDirector player components from for each playable output.</param>
-		/// <param name="mode">What to do when the time passes the duration of the playable.</param>
-		// Token: 0x0600301C RID: 12316
-		 
-		[MethodImpl(4096)]
-		public extern void Play();
+        public double time
+        {
+            get { return m_Time; }
+            set
+            {
+                m_Time = Math.Max(0.0, value);
 
-		/// <summary>
-		///   <para>Stops playback of the current Playable and destroys the corresponding graph.</para>
-		/// </summary>
-		// Token: 0x0600301D RID: 12317
-		 
-		[MethodImpl(4096)]
-		public extern void Stop();
+                if (m_RootPlayable.IsValid())
+                    m_RootPlayable.time = m_Time;
+            }
+        }
 
-		/// <summary>
-		///   <para>Pauses playback of the currently running playable.</para>
-		/// </summary>
-		// Token: 0x0600301E RID: 12318
-		 
-		[MethodImpl(4096)]
-		public extern void Pause();
+        public double initialTime
+        {
+            get { return m_InitialTime; }
+            set { m_InitialTime = Math.Max(0.0, value); }
+        }
 
-		/// <summary>
-		///   <para>Resume playing a paused playable.</para>
-		/// </summary>
-		// Token: 0x0600301F RID: 12319
-		 
-		[MethodImpl(4096)]
-		public extern void Resume();
+        public double duration
+        {
+            get
+            {
+                return m_PlayableAsset != null
+                    ? m_PlayableAsset.duration
+                    : 0.0;
+            }
+        }
 
-		/// <summary>
-		///   <para>Sets an ExposedReference value.</para>
-		/// </summary>
-		/// <param name="id">Identifier of the ExposedReference.</param>
-		/// <param name="value">The object to bind to set the reference value to.</param>
-		// Token: 0x06003020 RID: 12320 RVA: 0x00044548 File Offset: 0x00042748
-		public void SetReferenceValue(PropertyName id, Object value)
-		{
-			PlayableDirector.INTERNAL_CALL_SetReferenceValue(this, ref id, value);
-		}
+        public PlayableGraph playableGraph
+        {
+            get { return m_Graph; }
+        }
 
-		// Token: 0x06003021 RID: 12321
-		 
-		[MethodImpl(4096)]
-		private static extern void INTERNAL_CALL_SetReferenceValue(PlayableDirector self, ref PropertyName id, Object value);
+        private void Awake()
+        {
+            if (m_PlayOnAwake && m_PlayableAsset != null)
+                Play();
+        }
 
-		// Token: 0x06003022 RID: 12322 RVA: 0x00044554 File Offset: 0x00042754
-		public Object GetReferenceValue(PropertyName id, out bool idValid)
-		{
-			return PlayableDirector.INTERNAL_CALL_GetReferenceValue(this, ref id, out idValid);
-		}
+        private void Update()
+        {
+            if (m_DeferredEvaluate)
+            {
+                m_DeferredEvaluate = false;
+                Evaluate();
+            }
 
-		// Token: 0x06003023 RID: 12323
-		 
-		[MethodImpl(4096)]
-		private static extern Object INTERNAL_CALL_GetReferenceValue(PlayableDirector self, ref PropertyName id, out bool idValid);
+            if (m_State != PlayState.Playing ||
+                !m_Graph.IsValid() ||
+                m_TimeUpdateMode == DirectorUpdateMode.Manual)
+            {
+                return;
+            }
 
-		/// <summary>
-		///   <para>Clears an exposed reference value.</para>
-		/// </summary>
-		/// <param name="id">Identifier of the ExposedReference.</param>
-		// Token: 0x06003024 RID: 12324 RVA: 0x00044574 File Offset: 0x00042774
-		public void ClearReferenceValue(PropertyName id)
-		{
-			PlayableDirector.INTERNAL_CALL_ClearReferenceValue(this, ref id);
-		}
+            float deltaTime =
+                m_TimeUpdateMode == DirectorUpdateMode.UnscaledGameTime ||
+                m_TimeUpdateMode == DirectorUpdateMode.DSPClock
+                    ? Time.unscaledDeltaTime
+                    : Time.deltaTime;
 
-		// Token: 0x06003025 RID: 12325
-		 
-		[MethodImpl(4096)]
-		private static extern void INTERNAL_CALL_ClearReferenceValue(PlayableDirector self, ref PropertyName id);
+            Advance(deltaTime);
+        }
 
-		/// <summary>
-		///   <para>The PlayableGraph created by the PlayableDirector.</para>
-		/// </summary>
-		// Token: 0x17000B72 RID: 2930
-		// (get) Token: 0x06003026 RID: 12326 RVA: 0x00044580 File Offset: 0x00042780
-		public PlayableGraph playableGraph
-		{
-			get
-			{
-				PlayableGraph result = default(PlayableGraph);
-				this.InternalGetCurrentGraph(ref result);
-				return result;
-			}
-		}
+        private void OnDisable()
+        {
+            if (m_State == PlayState.Playing)
+                Pause();
+        }
 
-		// Token: 0x06003027 RID: 12327
-		 
-		[MethodImpl(4096)]
-		private extern void InternalGetCurrentGraph(ref PlayableGraph graph);
+        private void OnDestroy()
+        {
+            DestroyGraph();
+        }
 
-		/// <summary>
-		///   <para>Sets the binding of a reference object from a PlayableBinding.</para>
-		/// </summary>
-		/// <param name="key">The source object in the PlayableBinding.</param>
-		/// <param name="value">The object to bind to the key.</param>
-		// Token: 0x06003028 RID: 12328
-		 
-		[MethodImpl(4096)]
-		public extern void SetGenericBinding(Object key, Object value);
+        public void Evaluate()
+        {
+            if (!EnsureGraph())
+                return;
 
-		/// <summary>
-		///   <para>Returns a binding to a reference object.</para>
-		/// </summary>
-		/// <param name="key">The object that acts as a key.</param>
-		// Token: 0x06003029 RID: 12329
-		 
-		[MethodImpl(4096)]
-		public extern Object GetGenericBinding(Object key);
-	}
+            if (m_RootPlayable.IsValid())
+                m_RootPlayable.time = m_Time;
+
+            m_Graph.Evaluate(0f);
+            ApplyBindings();
+        }
+
+        public void DeferredEvaluate()
+        {
+            m_DeferredEvaluate = true;
+        }
+
+        public void Play(PlayableAsset asset)
+        {
+            if (asset == null)
+                throw new ArgumentNullException("asset");
+
+            Play(asset, m_WrapMode);
+        }
+
+        public void Play(
+            PlayableAsset asset,
+            DirectorWrapMode mode)
+        {
+            if (asset == null)
+                throw new ArgumentNullException("asset");
+
+            playableAsset = asset;
+            wrapMode = mode;
+            Play();
+        }
+
+        public void Play()
+        {
+            if (!EnsureGraph())
+                return;
+
+            m_Time = Math.Max(0.0, m_InitialTime);
+
+            if (m_RootPlayable.IsValid())
+            {
+                m_RootPlayable.duration =
+                    Math.Max(0.0, duration);
+
+                m_RootPlayable.time = m_Time;
+            }
+
+            ApplyBindings();
+            m_Graph.Play();
+            m_State = PlayState.Playing;
+            m_Graph.Evaluate(0f);
+        }
+
+        public void Stop()
+        {
+            if (m_Graph.IsValid())
+            {
+                m_Graph.Stop();
+                DestroyGraph();
+            }
+
+            m_State = PlayState.Paused;
+            m_Time = 0.0;
+        }
+
+        public void Pause()
+        {
+            if (m_State != PlayState.Playing)
+                return;
+
+            if (m_Graph.IsValid())
+                m_Graph.Stop();
+
+            m_State = PlayState.Paused;
+        }
+
+        public void Resume()
+        {
+            if (!EnsureGraph())
+                return;
+
+            ApplyBindings();
+            m_Graph.Play();
+            m_State = PlayState.Playing;
+        }
+
+        public void SetReferenceValue(
+            PropertyName id,
+            UnityEngine.Object value)
+        {
+            m_ReferenceValues[id] = value;
+        }
+
+        public UnityEngine.Object GetReferenceValue(
+            PropertyName id,
+            out bool idValid)
+        {
+            UnityEngine.Object value;
+            idValid = m_ReferenceValues.TryGetValue(id, out value);
+            return value;
+        }
+
+        public void ClearReferenceValue(PropertyName id)
+        {
+            m_ReferenceValues.Remove(id);
+        }
+
+        public void SetGenericBinding(
+            UnityEngine.Object key,
+            UnityEngine.Object value)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key");
+
+            if (value == null)
+                m_GenericBindings.Remove(key);
+            else
+                m_GenericBindings[key] = value;
+
+            if (m_Graph.IsValid())
+                ApplyBindings();
+        }
+
+        public UnityEngine.Object GetGenericBinding(
+            UnityEngine.Object key)
+        {
+            UnityEngine.Object value;
+
+            return key != null &&
+                   m_GenericBindings.TryGetValue(key, out value)
+                ? value
+                : null;
+        }
+
+        private bool EnsureGraph()
+        {
+            if (m_Graph.IsValid())
+                return true;
+
+            if (m_PlayableAsset == null)
+                return false;
+
+            m_Graph = PlayableGraph.Create();
+            m_Graph.resolver = this;
+
+            m_RootPlayable =
+                m_PlayableAsset.CreatePlayable(
+                    m_Graph,
+                    gameObject);
+
+            if (!m_RootPlayable.IsValid())
+            {
+                DestroyGraph();
+                return false;
+            }
+
+            m_RootPlayable.duration =
+                Math.Max(0.0, duration);
+
+            m_RootPlayable.time = m_Time;
+            ApplyBindings();
+            return true;
+        }
+
+        private void DestroyGraph()
+        {
+            if (m_Graph.IsValid())
+                m_Graph.Destroy();
+
+            m_Graph = default(PlayableGraph);
+            m_RootPlayable = PlayableHandle.Null;
+        }
+
+        private void Advance(float deltaTime)
+        {
+            double assetDuration = duration;
+            double nextTime = m_Time + deltaTime;
+
+            if (assetDuration > 0.0 &&
+                !Double.IsInfinity(assetDuration) &&
+                nextTime >= assetDuration)
+            {
+                switch (m_WrapMode)
+                {
+                    case DirectorWrapMode.Loop:
+                        nextTime %= assetDuration;
+                        ResetGraphTime(nextTime);
+                        m_Graph.Play();
+                        break;
+
+                    case DirectorWrapMode.Hold:
+                        nextTime = assetDuration;
+                        ResetGraphTime(nextTime);
+                        m_Graph.Evaluate(0f);
+                        m_Graph.Stop();
+                        m_State = PlayState.Paused;
+                        m_Time = nextTime;
+                        return;
+
+                    case DirectorWrapMode.None:
+                        Stop();
+                        return;
+                }
+            }
+
+            m_Graph.Evaluate(deltaTime);
+            m_Time = m_RootPlayable.IsValid()
+                ? m_RootPlayable.time
+                : nextTime;
+        }
+
+        private void ResetGraphTime(double value)
+        {
+            m_Time = value;
+
+            if (m_RootPlayable.IsValid())
+                m_RootPlayable.time = value;
+        }
+
+        private void ApplyBindings()
+        {
+            if (!m_Graph.IsValid())
+                return;
+
+            int animationCount =
+                m_Graph.GetAnimationOutputCount();
+
+            for (int i = 0; i < animationCount; ++i)
+            {
+                AnimationPlayableOutput output =
+                    m_Graph.GetAnimationOutput(i);
+
+                UnityEngine.Object key =
+                    output.referenceObject;
+
+                UnityEngine.Object binding =
+                    GetGenericBinding(key);
+
+                Animator animator = binding as Animator;
+
+                if (animator == null)
+                {
+                    GameObject targetObject =
+                        binding as GameObject;
+
+                    if (targetObject != null)
+                        animator =
+                            targetObject.GetComponent<Animator>();
+                }
+
+                output.target = animator;
+            }
+
+            int audioCount =
+                LegacyPlayableRuntime.GetAudioOutputCount(m_Graph);
+
+            for (int i = 0; i < audioCount; ++i)
+            {
+                PlayableOutput rawOutput;
+
+                if (!LegacyPlayableRuntime.GetAudioOutput(
+                    m_Graph,
+                    i,
+                    out rawOutput))
+                {
+                    continue;
+                }
+
+                UnityEngine.Object key =
+                    LegacyPlayableRuntime
+                        .GetOutputReferenceObject(rawOutput);
+
+                UnityEngine.Object binding =
+                    GetGenericBinding(key);
+
+                AudioMixerGroup mixerGroup =
+                    binding as AudioMixerGroup;
+
+                AudioSource audioSource =
+                    binding as AudioSource;
+
+                if (audioSource != null)
+                    mixerGroup =
+                        audioSource.outputAudioMixerGroup;
+
+                LegacyPlayableRuntime.SetAudioOutputTarget(
+                    rawOutput,
+                    mixerGroup);
+            }
+        }
+    }
 }

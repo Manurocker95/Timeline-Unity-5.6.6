@@ -501,6 +501,7 @@ namespace UnityEngine.Playables
             internal bool IsPlaying;
             internal bool IsDone;
             internal double Time;
+            internal ulong FrameId;
             internal IExposedPropertyTable Resolver;
 
             internal readonly HashSet<long> Playables = new HashSet<long>();
@@ -644,15 +645,15 @@ namespace UnityEngine.Playables
 
         internal static void Play(PlayableGraph graph)
         {
-            GraphState state = GetGraphOrThrow(graph);
+            GraphState graphState = GetGraphOrThrow(graph);
 
-            state.IsPlaying = true;
-            state.IsDone = false;
+            if (graphState.IsPlaying)
+                return;
 
-            long[] playableIds =
-                new long[state.Playables.Count];
+            graphState.IsPlaying = true;
+            graphState.IsDone = false;
 
-            state.Playables.CopyTo(playableIds);
+            long[] playableIds = CopyPlayableIds(graphState);
 
             for (int i = 0; i < playableIds.Length; ++i)
             {
@@ -665,35 +666,79 @@ namespace UnityEngine.Playables
                     continue;
                 }
 
-                if (!playableState.IsDone)
+                IScriptPlayable scriptPlayable =
+                    playableState.ScriptInstance as IScriptPlayable;
+
+                if (scriptPlayable != null)
+                    scriptPlayable.OnGraphStart();
+
+                if (!playableState.IsDone &&
+                    playableState.PlayState != PlayState.Playing)
+                {
                     playableState.PlayState = PlayState.Playing;
+
+                    if (scriptPlayable != null)
+                    {
+                        scriptPlayable.OnPlayStateChanged(
+                            CreateFrameDataForPlayable(
+                                graphState,
+                                playableState,
+                                0f,
+                                FrameData.EvaluationType.Playback,
+                                false),
+                            PlayState.Playing);
+                    }
+                }
             }
         }
 
         internal static void Stop(PlayableGraph graph)
         {
-            GraphState state = GetGraphOrThrow(graph);
+            GraphState graphState = GetGraphOrThrow(graph);
 
-            state.IsPlaying = false;
+            if (!graphState.IsPlaying)
+                return;
 
-            long[] playableIds =
-                new long[state.Playables.Count];
+            graphState.IsPlaying = false;
 
-            state.Playables.CopyTo(playableIds);
+            long[] playableIds = CopyPlayableIds(graphState);
 
             for (int i = 0; i < playableIds.Length; ++i)
             {
                 PlayableState playableState;
 
-                if (s_Playables.TryGetValue(
+                if (!s_Playables.TryGetValue(
                     playableIds[i],
                     out playableState))
                 {
-                    playableState.PlayState = PlayState.Paused;
+                    continue;
                 }
+
+                IScriptPlayable scriptPlayable =
+                    playableState.ScriptInstance as IScriptPlayable;
+
+                if (playableState.PlayState != PlayState.Paused)
+                {
+                    playableState.PlayState = PlayState.Paused;
+
+                    if (scriptPlayable != null)
+                    {
+                        scriptPlayable.OnPlayStateChanged(
+                            CreateFrameDataForPlayable(
+                                graphState,
+                                playableState,
+                                0f,
+                                FrameData.EvaluationType.Playback,
+                                false),
+                            PlayState.Paused);
+                    }
+                }
+
+                if (scriptPlayable != null)
+                    scriptPlayable.OnGraphStop();
             }
 
-            foreach (long outputId in state.Outputs)
+            foreach (long outputId in graphState.Outputs)
             {
                 OutputState outputState;
 
@@ -713,31 +758,46 @@ namespace UnityEngine.Playables
             return TryGetGraph(graph, out state) ? state.Playables.Count : 0;
         }
 
-        internal static void Evaluate(PlayableGraph graph, float deltaTime)
+        internal static void Evaluate(
+            PlayableGraph graph,
+            float deltaTime)
         {
-            GraphState state = GetGraphOrThrow(graph);
+            GraphState graphState = GetGraphOrThrow(graph);
 
             if (deltaTime < 0f)
+            {
                 throw new ArgumentOutOfRangeException(
                     "deltaTime",
                     "PlayableGraph cannot be evaluated with a negative delta time.");
+            }
 
-            state.Time += deltaTime;
+            graphState.Time += deltaTime;
+            graphState.FrameId++;
+
             bool hasPlayable = false;
             bool allDone = true;
+            long[] playableIds = CopyPlayableIds(graphState);
 
-            foreach (long playableId in state.Playables)
+            // 1. Update managed playable time and state.
+            for (int i = 0; i < playableIds.Length; ++i)
             {
                 PlayableState playableState;
-                if (!s_Playables.TryGetValue(playableId, out playableState))
+
+                if (!s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
                     continue;
+                }
 
                 hasPlayable = true;
+                PlayState previousState = playableState.PlayState;
 
                 if (playableState.PlayState == PlayState.Playing &&
                     !playableState.IsDone)
                 {
-                    playableState.Time += deltaTime * playableState.Speed;
+                    playableState.Time +=
+                        deltaTime * playableState.Speed;
 
                     if (playableState.Duration >= 0.0 &&
                         playableState.Time >= playableState.Duration)
@@ -748,12 +808,307 @@ namespace UnityEngine.Playables
                     }
                 }
 
+                IScriptPlayable scriptPlayable =
+                    playableState.ScriptInstance as IScriptPlayable;
+
+                if (scriptPlayable != null &&
+                    previousState != playableState.PlayState)
+                {
+                    scriptPlayable.OnPlayStateChanged(
+                        CreateFrameDataForPlayable(
+                            graphState,
+                            playableState,
+                            deltaTime,
+                            FrameData.EvaluationType.Evaluate,
+                            false),
+                        playableState.PlayState);
+                }
+
                 if (!playableState.IsDone)
                     allDone = false;
             }
 
-            state.IsDone = hasPlayable && allDone;
-            EvaluateAudioOutputs(state);
+            // 2. TimelinePlayable and other managed scripts update clips/weights.
+            for (int i = 0; i < playableIds.Length; ++i)
+            {
+                PlayableState playableState;
+
+                if (!s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
+                    continue;
+                }
+
+                IScriptPlayable scriptPlayable =
+                    playableState.ScriptInstance as IScriptPlayable;
+
+                if (scriptPlayable == null)
+                    continue;
+
+                scriptPlayable.PrepareFrame(
+                    CreateFrameDataForPlayable(
+                        graphState,
+                        playableState,
+                        deltaTime,
+                        FrameData.EvaluationType.Evaluate,
+                        false));
+            }
+
+            // 3. Script outputs receive ProcessFrame.
+            long[] outputIds = CopyOutputIds(graphState);
+
+            for (int i = 0; i < outputIds.Length; ++i)
+            {
+                OutputState outputState;
+
+                if (!s_Outputs.TryGetValue(
+                    outputIds[i],
+                    out outputState) ||
+                    outputState.Kind != OutputKind.Script ||
+                    !outputState.SourcePlayable.IsValid())
+                {
+                    continue;
+                }
+
+                PlayableState playableState;
+
+                if (!TryGetPlayable(
+                    outputState.SourcePlayable,
+                    out playableState))
+                {
+                    continue;
+                }
+
+                IScriptPlayable scriptPlayable =
+                    playableState.ScriptInstance as IScriptPlayable;
+
+                if (scriptPlayable == null)
+                    continue;
+
+                scriptPlayable.ProcessFrame(
+                    CreateFrameData(
+                        graphState,
+                        deltaTime,
+                        FrameData.EvaluationType.Evaluate,
+                        false,
+                        outputState.Weight,
+                        outputState.Weight,
+                        (float)playableState.Speed),
+                    outputState.UserData);
+            }
+
+            graphState.IsDone = hasPlayable && allDone;
+
+            // Timeline has already updated clip time and mixer weights.
+            EvaluateAnimationOutputs(graphState);
+            EvaluateAudioOutputs(graphState);
+        }
+
+        private struct AnimationSampleCandidate
+        {
+            internal bool IsValid;
+            internal AnimationClip Clip;
+            internal double Time;
+            internal float Weight;
+            internal Vector3 PositionOffset;
+            internal Quaternion RotationOffset;
+        }
+
+        private static void EvaluateAnimationOutputs(
+            GraphState graphState)
+        {
+            long[] outputIds = CopyOutputIds(graphState);
+
+            for (int i = 0; i < outputIds.Length; ++i)
+            {
+                OutputState outputState;
+
+                if (!s_Outputs.TryGetValue(
+                    outputIds[i],
+                    out outputState) ||
+                    outputState.Kind != OutputKind.Animation ||
+                    outputState.Weight <= 0f)
+                {
+                    continue;
+                }
+
+                Animator animator =
+                    outputState.ReferenceObject as Animator;
+
+                if (animator == null ||
+                    !outputState.SourcePlayable.IsValid())
+                {
+                    continue;
+                }
+
+                AnimationSampleCandidate candidate =
+                    default(AnimationSampleCandidate);
+
+                HashSet<long> visited = new HashSet<long>();
+
+                FindBestAnimationSample(
+                    graphState,
+                    outputState.SourcePlayable.m_Handle.ToInt64(),
+                    outputState.Weight,
+                    Vector3.zero,
+                    Quaternion.identity,
+                    visited,
+                    ref candidate);
+
+                if (!candidate.IsValid || candidate.Clip == null)
+                    continue;
+
+                float sampleTime = ResolveAnimationSampleTime(
+                    candidate.Clip,
+                    candidate.Time);
+
+                candidate.Clip.SampleAnimation(
+                    animator.gameObject,
+                    sampleTime);
+
+                if (candidate.PositionOffset != Vector3.zero)
+                {
+                    animator.transform.localPosition +=
+                        candidate.PositionOffset;
+                }
+
+                if (candidate.RotationOffset != Quaternion.identity)
+                {
+                    animator.transform.localRotation =
+                        candidate.RotationOffset *
+                        animator.transform.localRotation;
+                }
+            }
+        }
+
+        private static void FindBestAnimationSample(
+            GraphState graphState,
+            long playableId,
+            float inheritedWeight,
+            Vector3 inheritedPositionOffset,
+            Quaternion inheritedRotationOffset,
+            HashSet<long> visited,
+            ref AnimationSampleCandidate best)
+        {
+            if (playableId == 0 || inheritedWeight <= 0f)
+                return;
+
+            if (!visited.Add(playableId))
+                return;
+
+            PlayableState playableState;
+
+            if (!s_Playables.TryGetValue(
+                playableId,
+                out playableState))
+            {
+                return;
+            }
+
+            Vector3 positionOffset = inheritedPositionOffset;
+            Quaternion rotationOffset = inheritedRotationOffset;
+
+            if (playableState.PlayableType ==
+                typeof(AnimationOffsetPlayable))
+            {
+                positionOffset +=
+                    playableState.AnimationOffsetPosition;
+
+                rotationOffset =
+                    playableState.AnimationOffsetRotation *
+                    rotationOffset;
+            }
+
+            if (playableState.AnimationClip != null)
+            {
+                if (!best.IsValid ||
+                    inheritedWeight > best.Weight)
+                {
+                    best.IsValid = true;
+                    best.Clip = playableState.AnimationClip;
+                    best.Time = playableState.Time;
+                    best.Weight = inheritedWeight;
+                    best.PositionOffset = positionOffset;
+                    best.RotationOffset = rotationOffset;
+                }
+
+                return;
+            }
+
+            List<ConnectionKey> inputs =
+                GetInputConnections(graphState, playableId);
+
+            float totalWeight = 0f;
+
+            if (playableState.AnimationMixerNormalizeWeights)
+            {
+                for (int i = 0; i < inputs.Count; ++i)
+                {
+                    float inputWeight;
+
+                    if (!playableState.InputWeights.TryGetValue(
+                        inputs[i].InputPort,
+                        out inputWeight))
+                    {
+                        inputWeight = 1f;
+                    }
+
+                    if (inputWeight > 0f)
+                        totalWeight += inputWeight;
+                }
+            }
+
+            for (int i = 0; i < inputs.Count; ++i)
+            {
+                ConnectionState connection;
+
+                if (!graphState.Connections.TryGetValue(
+                    inputs[i],
+                    out connection))
+                {
+                    continue;
+                }
+
+                float inputWeight;
+
+                if (!playableState.InputWeights.TryGetValue(
+                    inputs[i].InputPort,
+                    out inputWeight))
+                {
+                    inputWeight = 1f;
+                }
+
+                if (playableState.AnimationMixerNormalizeWeights &&
+                    totalWeight > 0f)
+                {
+                    inputWeight /= totalWeight;
+                }
+
+                FindBestAnimationSample(
+                    graphState,
+                    connection.SourceId,
+                    inheritedWeight * inputWeight,
+                    positionOffset,
+                    rotationOffset,
+                    visited,
+                    ref best);
+            }
+        }
+
+        private static float ResolveAnimationSampleTime(
+            AnimationClip clip,
+            double playableTime)
+        {
+            if (clip == null || clip.length <= 0f)
+                return 0f;
+
+            float time = (float)playableTime;
+
+            if (clip.isLooping)
+                return Mathf.Repeat(time, clip.length);
+
+            return Mathf.Clamp(time, 0f, clip.length);
         }
 
         private struct AudioSampleCandidate
@@ -2149,7 +2504,30 @@ namespace UnityEngine.Playables
             PlayableHandle playable,
             PlayState playState)
         {
-            GetPlayableOrThrow(playable).PlayState = playState;
+            PlayableState state = GetPlayableOrThrow(playable);
+
+            if (state.PlayState == playState)
+                return;
+
+            state.PlayState = playState;
+
+            IScriptPlayable scriptPlayable =
+                state.ScriptInstance as IScriptPlayable;
+
+            if (scriptPlayable != null)
+            {
+                PlayableGraph graph = GetGraph(playable);
+                GraphState graphState = GetGraphOrThrow(graph);
+
+                scriptPlayable.OnPlayStateChanged(
+                    CreateFrameDataForPlayable(
+                        graphState,
+                        state,
+                        0f,
+                        FrameData.EvaluationType.Evaluate,
+                        false),
+                    playState);
+            }
         }
 
         internal static double GetSpeed(PlayableHandle playable)
@@ -2363,6 +2741,97 @@ namespace UnityEngine.Playables
             handle.m_Handle = new IntPtr(playableId);
             handle.m_Version = state.Version;
             return handle;
+        }
+
+        internal static bool IsAnimationLayerMixer(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AnimationLayerMixer;
+        }
+
+        private static FrameData CreateFrameDataForPlayable(
+            GraphState graphState,
+            PlayableState playableState,
+            float deltaTime,
+            FrameData.EvaluationType evaluationType,
+            bool seekOccurred)
+        {
+            return CreateFrameData(
+                graphState,
+                deltaTime,
+                evaluationType,
+                seekOccurred,
+                1f,
+                1f,
+                (float)playableState.Speed);
+        }
+
+        private static FrameData CreateFrameData(
+            GraphState graphState,
+            float deltaTime,
+            FrameData.EvaluationType evaluationType,
+            bool seekOccurred,
+            float weight,
+            float effectiveWeight,
+            float effectiveSpeed)
+        {
+            FrameData info = default(FrameData);
+            info.m_FrameID = graphState.FrameId;
+            info.m_DeltaTime = deltaTime;
+            info.m_Weight = weight;
+            info.m_EffectiveWeight = effectiveWeight;
+            info.m_EffectiveSpeed = effectiveSpeed;
+            info.m_Flags = 0;
+
+            if (evaluationType == FrameData.EvaluationType.Evaluate)
+                info.m_Flags |= FrameData.Flags.Evaluate;
+
+            if (seekOccurred)
+                info.m_Flags |= FrameData.Flags.SeekOccured;
+
+            return info;
+        }
+
+        private static long[] CopyPlayableIds(GraphState graphState)
+        {
+            long[] ids = new long[graphState.Playables.Count];
+            graphState.Playables.CopyTo(ids);
+            Array.Sort(ids);
+            return ids;
+        }
+
+        private static long[] CopyOutputIds(GraphState graphState)
+        {
+            long[] ids = new long[graphState.Outputs.Count];
+            graphState.Outputs.CopyTo(ids);
+            Array.Sort(ids);
+            return ids;
+        }
+
+        private static List<ConnectionKey> GetInputConnections(
+            GraphState graphState,
+            long playableId)
+        {
+            List<ConnectionKey> inputs =
+                new List<ConnectionKey>();
+
+            foreach (
+                KeyValuePair<ConnectionKey, ConnectionState> pair
+                in graphState.Connections)
+            {
+                if (pair.Key.DestinationId == playableId)
+                    inputs.Add(pair.Key);
+            }
+
+            inputs.Sort(
+                delegate (
+                    ConnectionKey left,
+                    ConnectionKey right)
+                {
+                    return left.InputPort.CompareTo(right.InputPort);
+                });
+
+            return inputs;
         }
 
         private static bool TryGetGraph(

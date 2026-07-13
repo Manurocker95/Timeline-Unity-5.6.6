@@ -4,105 +4,146 @@ using UnityEngine.Playables;
 
 namespace UnityEngine.Timeline
 {
-	// Token: 0x02000022 RID: 34
-	internal class AnimationOutputWeightProcessor : ITimelineEvaluateCallback
-	{
-		// Token: 0x06000125 RID: 293 RVA: 0x00006126 File Offset: 0x00004326
-		public AnimationOutputWeightProcessor(AnimationPlayableOutput output)
-		{
-			this.m_Output = output;
-			this.FindMixers();
-		}
+    internal class AnimationOutputWeightProcessor :
+        ITimelineEvaluateCallback
+    {
+        public AnimationOutputWeightProcessor(
+            AnimationPlayableOutput output)
+        {
+            m_Output = output;
+            FindMixers();
+        }
 
-		// Token: 0x06000126 RID: 294 RVA: 0x00006148 File Offset: 0x00004348
-		private void FindMixers()
-		{
-			this.m_Mixers.Clear();
-			this.m_LayerMixer = PlayableHandle.Null;
-			PlayableHandle sourcePlayable = this.m_Output.sourcePlayable;
-			int sourceInputPort = this.m_Output.sourceInputPort;
-			if (sourcePlayable.IsValid() && sourceInputPort >= 0 && sourceInputPort < sourcePlayable.inputCount)
-			{
-				PlayableHandle input = sourcePlayable.GetInput(sourceInputPort).GetInput(0);
-				if (input.IsValid() && PlayableHandle.GetPlayableTypeOf(ref input) == typeof(AnimationLayerMixerPlayable))
-				{
-					this.m_LayerMixer = input;
-					int inputCount = this.m_LayerMixer.inputCount;
-					for (int i = 0; i < inputCount; i++)
-					{
-						this.FindMixers(this.m_LayerMixer, i, this.m_LayerMixer.GetInput(i));
-					}
-				}
-			}
-		}
+        private void FindMixers()
+        {
+            m_Mixers.Clear();
+            m_LayerMixer = PlayableHandle.Null;
 
-		// Token: 0x06000127 RID: 295 RVA: 0x0000622C File Offset: 0x0000442C
-		private void FindMixers(PlayableHandle parent, int port, PlayableHandle node)
-		{
-			if (node.IsValid())
-			{
-				Type playableTypeOf = PlayableHandle.GetPlayableTypeOf(ref node);
-				if (playableTypeOf == typeof(AnimationMixerPlayable) || playableTypeOf == typeof(AnimationLayerMixerPlayable))
-				{
-					int inputCount = node.inputCount;
-					for (int i = 0; i < inputCount; i++)
-					{
-						this.FindMixers(node, i, node.GetInput(i));
-					}
-					this.m_Mixers.Add(new AnimationOutputWeightProcessor.WeightInfo
-					{
-						parentMixer = parent,
-						mixer = node,
-						port = port,
-						modulate = (playableTypeOf == typeof(AnimationLayerMixerPlayable))
-					});
-				}
-				else
-				{
-					int inputCount2 = node.inputCount;
-					for (int j = 0; j < inputCount2; j++)
-					{
-						this.FindMixers(parent, port, node.GetInput(j));
-					}
-				}
-			}
-		}
+            PlayableHandle sourcePlayable =
+                m_Output.sourcePlayable;
 
-		// Token: 0x06000128 RID: 296 RVA: 0x0000631C File Offset: 0x0000451C
-		public void Evaluate()
-		{
-			for (int i = 0; i < this.m_Mixers.Count; i++)
-			{
-				AnimationOutputWeightProcessor.WeightInfo weightInfo = this.m_Mixers[i];
-				float num = (!weightInfo.modulate) ? 1f : weightInfo.parentMixer.GetInputWeight(weightInfo.port);
-				weightInfo.parentMixer.SetInputWeight(weightInfo.port, num * WeightUtility.NormalizeMixer(weightInfo.mixer));
-			}
-			this.m_Output.weight = WeightUtility.NormalizeMixer(this.m_LayerMixer);
-		}
+            int sourceInputPort =
+                m_Output.sourceInputPort;
 
-		// Token: 0x0400009D RID: 157
-		private AnimationPlayableOutput m_Output;
+            if (!sourcePlayable.IsValid() ||
+                sourceInputPort < 0 ||
+                sourceInputPort >= sourcePlayable.inputCount)
+            {
+                return;
+            }
 
-		// Token: 0x0400009E RID: 158
-		private PlayableHandle m_LayerMixer;
+            PlayableHandle node =
+                sourcePlayable.GetInput(sourceInputPort);
 
-		// Token: 0x0400009F RID: 159
-		private readonly List<AnimationOutputWeightProcessor.WeightInfo> m_Mixers = new List<AnimationOutputWeightProcessor.WeightInfo>();
+            FindLayerMixer(node);
+        }
 
-		// Token: 0x02000023 RID: 35
-		private struct WeightInfo
-		{
-			// Token: 0x040000A0 RID: 160
-			public PlayableHandle mixer;
+        private void FindLayerMixer(PlayableHandle node)
+        {
+            if (!node.IsValid())
+                return;
 
-			// Token: 0x040000A1 RID: 161
-			public PlayableHandle parentMixer;
+            if (LegacyPlayableRuntime.IsAnimationLayerMixer(node))
+            {
+                m_LayerMixer = node;
 
-			// Token: 0x040000A2 RID: 162
-			public int port;
+                for (int i = 0; i < node.inputCount; ++i)
+                {
+                    FindMixers(
+                        node,
+                        i,
+                        node.GetInput(i));
+                }
 
-			// Token: 0x040000A3 RID: 163
-			public bool modulate;
-		}
-	}
+                return;
+            }
+
+            for (int i = 0; i < node.inputCount; ++i)
+                FindLayerMixer(node.GetInput(i));
+        }
+
+        private void FindMixers(
+            PlayableHandle parent,
+            int port,
+            PlayableHandle node)
+        {
+            if (!node.IsValid())
+                return;
+
+            Type playableType =
+                PlayableHandle.GetPlayableTypeOf(ref node);
+
+            bool isLayerMixer =
+                LegacyPlayableRuntime.IsAnimationLayerMixer(node);
+
+            bool isMixer =
+                playableType == typeof(AnimationMixerPlayable) ||
+                isLayerMixer;
+
+            if (isMixer)
+            {
+                for (int i = 0; i < node.inputCount; ++i)
+                {
+                    FindMixers(
+                        node,
+                        i,
+                        node.GetInput(i));
+                }
+
+                WeightInfo info = new WeightInfo();
+                info.parentMixer = parent;
+                info.mixer = node;
+                info.port = port;
+                info.modulate = isLayerMixer;
+
+                m_Mixers.Add(info);
+                return;
+            }
+
+            for (int i = 0; i < node.inputCount; ++i)
+            {
+                FindMixers(
+                    parent,
+                    port,
+                    node.GetInput(i));
+            }
+        }
+
+        public void Evaluate()
+        {
+            for (int i = 0; i < m_Mixers.Count; ++i)
+            {
+                WeightInfo info = m_Mixers[i];
+
+                float parentWeight =
+                    info.modulate
+                        ? info.parentMixer.GetInputWeight(info.port)
+                        : 1f;
+
+                info.parentMixer.SetInputWeight(
+                    info.port,
+                    parentWeight *
+                    WeightUtility.NormalizeMixer(info.mixer));
+            }
+
+            m_Output.weight =
+                m_LayerMixer.IsValid()
+                    ? WeightUtility.NormalizeMixer(m_LayerMixer)
+                    : 1f;
+        }
+
+        private AnimationPlayableOutput m_Output;
+        private PlayableHandle m_LayerMixer;
+
+        private readonly List<WeightInfo> m_Mixers =
+            new List<WeightInfo>();
+
+        private struct WeightInfo
+        {
+            public PlayableHandle mixer;
+            public PlayableHandle parentMixer;
+            public int port;
+            public bool modulate;
+        }
+    }
 }
