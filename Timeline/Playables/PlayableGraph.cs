@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine.Audio;
 using UnityEngine.Internal;
+using UnityEngine.Playables.Audio;
 using UnityEngine.Scripting;
 
 namespace UnityEngine.Playables
@@ -524,6 +526,13 @@ namespace UnityEngine.Playables
             internal Type PlayableType;
 
             internal AnimationClip AnimationClip;
+            internal AudioClip AudioClip;
+            internal bool AudioLooped;
+            internal bool AudioMixerNormalizeVolumes;
+            internal BuiltinDSPType AudioDSPType;
+            internal UnityEngine.Object AudioDSPDriver;
+            internal DSPFloatParameter[] AudioDSPParameters;
+
             internal bool AnimationApplyFootIK;
             internal bool AnimationRemoveStartOffset;
             internal bool AnimationMixerNormalizeWeights;
@@ -573,6 +582,9 @@ namespace UnityEngine.Playables
             internal PlayableHandle SourcePlayable;
             internal int SourceInputPort;
             internal float Weight = 1f;
+            internal AudioMixerGroup AudioTarget;
+            internal AudioSource RuntimeAudioSource;
+            internal GameObject RuntimeAudioObject;
         }
 
         private static readonly Dictionary<long, GraphState> s_Graphs =
@@ -635,43 +647,12 @@ namespace UnityEngine.Playables
             GraphState state = GetGraphOrThrow(graph);
             state.IsPlaying = true;
             state.IsDone = false;
-
-            long[] playableIds = new long[state.Playables.Count];
-            state.Playables.CopyTo(playableIds);
-
-            for (int i = 0; i < playableIds.Length; ++i)
-            {
-                PlayableState playableState;
-                if (!s_Playables.TryGetValue(
-                    playableIds[i],
-                    out playableState))
-                {
-                    continue;
-                }
-
-                if (!playableState.IsDone)
-                    playableState.PlayState = PlayState.Playing;
-            }
         }
 
         internal static void Stop(PlayableGraph graph)
         {
             GraphState state = GetGraphOrThrow(graph);
             state.IsPlaying = false;
-
-            long[] playableIds = new long[state.Playables.Count];
-            state.Playables.CopyTo(playableIds);
-
-            for (int i = 0; i < playableIds.Length; ++i)
-            {
-                PlayableState playableState;
-                if (s_Playables.TryGetValue(
-                    playableIds[i],
-                    out playableState))
-                {
-                    playableState.PlayState = PlayState.Paused;
-                }
-            }
         }
 
         internal static int GetPlayableCount(PlayableGraph graph)
@@ -720,22 +701,21 @@ namespace UnityEngine.Playables
             }
 
             state.IsDone = hasPlayable && allDone;
-
-            EvaluateAnimationOutputs(state);
+            EvaluateAudioOutputs(state);
         }
 
-        private struct AnimationSampleCandidate
+        private struct AudioSampleCandidate
         {
             internal bool IsValid;
-            internal long PlayableId;
-            internal AnimationClip Clip;
+            internal AudioClip Clip;
             internal double Time;
             internal float Weight;
-            internal Vector3 PositionOffset;
-            internal Quaternion RotationOffset;
+            internal bool Looped;
+            internal PlayState PlayState;
+            internal double Speed;
         }
 
-        private static void EvaluateAnimationOutputs(
+        private static void EvaluateAudioOutputs(
             GraphState graphState)
         {
             if (graphState.Outputs.Count == 0)
@@ -755,69 +735,93 @@ namespace UnityEngine.Playables
                     continue;
                 }
 
-                if (outputState.Kind != OutputKind.Animation)
-                    continue;
-
-                if (outputState.Weight <= 0f)
-                    continue;
-
-                Animator animator =
-                    outputState.ReferenceObject as Animator;
-
-                if (animator == null)
+                if (outputState.Kind != OutputKind.Audio)
                     continue;
 
                 if (!outputState.SourcePlayable.IsValid())
+                {
+                    PauseRuntimeAudioSource(outputState);
                     continue;
+                }
 
-                AnimationSampleCandidate candidate =
-                    default(AnimationSampleCandidate);
+                AudioSampleCandidate candidate =
+                    default(AudioSampleCandidate);
 
                 HashSet<long> visited = new HashSet<long>();
 
-                FindBestAnimationSample(
+                FindBestAudioSample(
                     graphState,
                     outputState.SourcePlayable.m_Handle.ToInt64(),
-                    outputState.Weight,
-                    Vector3.zero,
-                    Quaternion.identity,
+                    1f,
                     visited,
                     ref candidate);
 
-                if (!candidate.IsValid || candidate.Clip == null)
-                    continue;
-
-                float sampleTime = ResolveAnimationSampleTime(
-                    candidate.Clip,
-                    candidate.Time);
-
-                candidate.Clip.SampleAnimation(
-                    animator.gameObject,
-                    sampleTime);
-
-                if (candidate.PositionOffset != Vector3.zero)
+                if (!candidate.IsValid ||
+                    candidate.Clip == null ||
+                    candidate.Weight <= 0f)
                 {
-                    animator.transform.localPosition +=
-                        candidate.PositionOffset;
+                    PauseRuntimeAudioSource(outputState);
+                    continue;
                 }
 
-                if (candidate.RotationOffset != Quaternion.identity)
+                AudioSource source =
+                    EnsureRuntimeAudioSource(outputState);
+
+                if (source == null)
+                    continue;
+
+                source.outputAudioMixerGroup =
+                    outputState.AudioTarget;
+
+                source.volume = Mathf.Clamp01(candidate.Weight);
+                source.loop = candidate.Looped;
+                source.pitch = Mathf.Clamp(
+                    (float)candidate.Speed,
+                    -3f,
+                    3f);
+
+                bool clipChanged = source.clip != candidate.Clip;
+
+                if (clipChanged)
                 {
-                    animator.transform.localRotation =
-                        candidate.RotationOffset *
-                        animator.transform.localRotation;
+                    source.Stop();
+                    source.clip = candidate.Clip;
+                }
+
+                float desiredTime = ResolveAudioSampleTime(
+                    candidate.Clip,
+                    candidate.Time,
+                    candidate.Looped);
+
+                if (candidate.PlayState == PlayState.Playing &&
+                    graphState.IsPlaying)
+                {
+                    if (clipChanged ||
+                        Mathf.Abs(source.time - desiredTime) > 0.12f)
+                    {
+                        source.time = desiredTime;
+                    }
+
+                    if (!source.isPlaying)
+                        source.Play();
+                }
+                else
+                {
+                    if (source.isPlaying)
+                        source.Pause();
+
+                    if (Mathf.Abs(source.time - desiredTime) > 0.02f)
+                        source.time = desiredTime;
                 }
             }
         }
 
-        private static void FindBestAnimationSample(
+        private static void FindBestAudioSample(
             GraphState graphState,
             long playableId,
             float inheritedWeight,
-            Vector3 inheritedPositionOffset,
-            Quaternion inheritedRotationOffset,
             HashSet<long> visited,
-            ref AnimationSampleCandidate best)
+            ref AudioSampleCandidate best)
         {
             if (playableId == 0 || inheritedWeight <= 0f)
                 return;
@@ -833,32 +837,18 @@ namespace UnityEngine.Playables
                 return;
             }
 
-            Vector3 positionOffset = inheritedPositionOffset;
-            Quaternion rotationOffset = inheritedRotationOffset;
-
-            if (playableState.PlayableType ==
-                typeof(AnimationOffsetPlayable))
-            {
-                positionOffset +=
-                    playableState.AnimationOffsetPosition;
-
-                rotationOffset =
-                    playableState.AnimationOffsetRotation *
-                    rotationOffset;
-            }
-
-            if (playableState.AnimationClip != null)
+            if (playableState.AudioClip != null)
             {
                 if (!best.IsValid ||
                     inheritedWeight > best.Weight)
                 {
                     best.IsValid = true;
-                    best.PlayableId = playableId;
-                    best.Clip = playableState.AnimationClip;
+                    best.Clip = playableState.AudioClip;
                     best.Time = playableState.Time;
                     best.Weight = inheritedWeight;
-                    best.PositionOffset = positionOffset;
-                    best.RotationOffset = rotationOffset;
+                    best.Looped = playableState.AudioLooped;
+                    best.PlayState = playableState.PlayState;
+                    best.Speed = playableState.Speed;
                 }
 
                 return;
@@ -881,25 +871,22 @@ namespace UnityEngine.Playables
                     return left.InputPort.CompareTo(right.InputPort);
                 });
 
-            if (inputs.Count == 0)
-                return;
-
             float totalWeight = 0f;
 
-            if (playableState.AnimationMixerNormalizeWeights)
+            if (playableState.AudioMixerNormalizeVolumes)
             {
                 for (int i = 0; i < inputs.Count; ++i)
                 {
-                    float inputWeight;
+                    float weight;
                     if (!playableState.InputWeights.TryGetValue(
                         inputs[i].InputPort,
-                        out inputWeight))
+                        out weight))
                     {
-                        inputWeight = 1f;
+                        weight = 1f;
                     }
 
-                    if (inputWeight > 0f)
-                        totalWeight += inputWeight;
+                    if (weight > 0f)
+                        totalWeight += weight;
                 }
             }
 
@@ -915,44 +902,98 @@ namespace UnityEngine.Playables
                     continue;
                 }
 
-                float inputWeight;
+                float weight;
                 if (!playableState.InputWeights.TryGetValue(
                     key.InputPort,
-                    out inputWeight))
+                    out weight))
                 {
-                    inputWeight = 1f;
+                    weight = 1f;
                 }
 
-                if (playableState.AnimationMixerNormalizeWeights &&
+                if (playableState.AudioMixerNormalizeVolumes &&
                     totalWeight > 0f)
                 {
-                    inputWeight /= totalWeight;
+                    weight /= totalWeight;
                 }
 
-                FindBestAnimationSample(
+                FindBestAudioSample(
                     graphState,
                     connection.SourceId,
-                    inheritedWeight * inputWeight,
-                    positionOffset,
-                    rotationOffset,
+                    inheritedWeight * weight,
                     visited,
                     ref best);
             }
         }
 
-        private static float ResolveAnimationSampleTime(
-            AnimationClip clip,
-            double playableTime)
+        private static AudioSource EnsureRuntimeAudioSource(
+            OutputState outputState)
+        {
+            if (outputState.RuntimeAudioSource != null)
+                return outputState.RuntimeAudioSource;
+
+            GameObject audioObject =
+                new GameObject("LegacyTimelineAudioOutput");
+
+            audioObject.hideFlags = HideFlags.HideAndDontSave;
+
+            AudioSource source =
+                audioObject.AddComponent<AudioSource>();
+
+            source.playOnAwake = false;
+            source.outputAudioMixerGroup =
+                outputState.AudioTarget;
+
+            outputState.RuntimeAudioObject = audioObject;
+            outputState.RuntimeAudioSource = source;
+            return source;
+        }
+
+        private static void PauseRuntimeAudioSource(
+            OutputState outputState)
+        {
+            if (outputState.RuntimeAudioSource != null &&
+                outputState.RuntimeAudioSource.isPlaying)
+            {
+                outputState.RuntimeAudioSource.Pause();
+            }
+        }
+
+        private static void DestroyRuntimeAudioSource(
+            OutputState outputState)
+        {
+            if (outputState == null)
+                return;
+
+            if (outputState.RuntimeAudioSource != null)
+                outputState.RuntimeAudioSource.Stop();
+
+            if (outputState.RuntimeAudioObject != null)
+            {
+                UnityEngine.Object.Destroy(
+                    outputState.RuntimeAudioObject);
+            }
+
+            outputState.RuntimeAudioSource = null;
+            outputState.RuntimeAudioObject = null;
+        }
+
+        private static float ResolveAudioSampleTime(
+            AudioClip clip,
+            double playableTime,
+            bool looped)
         {
             if (clip == null || clip.length <= 0f)
                 return 0f;
 
             float time = (float)playableTime;
 
-            if (clip.isLooping)
+            if (looped)
                 return Mathf.Repeat(time, clip.length);
 
-            return Mathf.Clamp(time, 0f, clip.length);
+            return Mathf.Clamp(
+                time,
+                0f,
+                Mathf.Max(0f, clip.length - 0.001f));
         }
 
         internal static void DestroyGraph(ref PlayableGraph graph)
@@ -972,7 +1013,17 @@ namespace UnityEngine.Playables
                 graphState.Outputs.CopyTo(outputIds);
 
                 for (int i = 0; i < outputIds.Length; ++i)
+                {
+                    OutputState outputState;
+                    if (s_Outputs.TryGetValue(
+                        outputIds[i],
+                        out outputState))
+                    {
+                        DestroyRuntimeAudioSource(outputState);
+                    }
+
                     s_Outputs.Remove(outputIds[i]);
+                }
 
                 s_Graphs.Remove(graphId);
             }
@@ -1180,6 +1231,7 @@ namespace UnityEngine.Playables
                     throw new InvalidOperationException(
                         "The PlayableOutput does not belong to this PlayableGraph.");
 
+                DestroyRuntimeAudioSource(state);
                 graphState.Outputs.Remove(outputId);
                 s_Outputs.Remove(outputId);
             }
@@ -1320,6 +1372,56 @@ namespace UnityEngine.Playables
                 out output);
         }
 
+        internal static bool CreateAudioOutput(
+            PlayableGraph graph,
+            string name,
+            out PlayableOutput output)
+        {
+            return CreateTypedOutput(
+                graph,
+                name,
+                OutputKind.Audio,
+                out output);
+        }
+
+        internal static int GetAudioOutputCount(
+            PlayableGraph graph)
+        {
+            return GetOutputCount(graph, OutputKind.Audio);
+        }
+
+        internal static bool GetAudioOutput(
+            PlayableGraph graph,
+            int index,
+            out PlayableOutput output)
+        {
+            return GetOutput(
+                graph,
+                index,
+                OutputKind.Audio,
+                out output);
+        }
+
+        internal static AudioMixerGroup GetAudioOutputTarget(
+            PlayableOutput output)
+        {
+            return GetOutputOrThrow(output).AudioTarget;
+        }
+
+        internal static void SetAudioOutputTarget(
+            PlayableOutput output,
+            AudioMixerGroup target)
+        {
+            OutputState state = GetOutputOrThrow(output);
+            state.AudioTarget = target;
+
+            if (state.RuntimeAudioSource != null)
+            {
+                state.RuntimeAudioSource.outputAudioMixerGroup =
+                    target;
+            }
+        }
+
         private static bool CreateTypedOutput(
             PlayableGraph graph,
             string name,
@@ -1409,6 +1511,63 @@ namespace UnityEngine.Playables
             output.m_Handle = new IntPtr(id);
             output.m_Version = state.Version;
             return true;
+        }
+
+        internal static AudioClip GetAudioClip(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AudioClip;
+        }
+
+        internal static void SetAudioClip(
+            PlayableHandle playable,
+            AudioClip clip)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AudioClip = clip;
+
+            if (clip != null)
+                state.Duration = clip.length;
+        }
+
+        internal static bool GetAudioLooped(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable).AudioLooped;
+        }
+
+        internal static void SetAudioLooped(
+            PlayableHandle playable,
+            bool looped)
+        {
+            GetPlayableOrThrow(playable).AudioLooped = looped;
+        }
+
+        internal static bool GetAudioMixerNormalizeVolumes(
+            PlayableHandle playable)
+        {
+            return GetPlayableOrThrow(playable)
+                .AudioMixerNormalizeVolumes;
+        }
+
+        internal static void SetAudioMixerNormalizeVolumes(
+            PlayableHandle playable,
+            bool normalize)
+        {
+            GetPlayableOrThrow(playable)
+                .AudioMixerNormalizeVolumes = normalize;
+        }
+
+        internal static void SetAudioDSPData(
+            PlayableHandle playable,
+            BuiltinDSPType dspType,
+            UnityEngine.Object driver,
+            DSPFloatParameter[] parameters)
+        {
+            PlayableState state = GetPlayableOrThrow(playable);
+            state.AudioDSPType = dspType;
+            state.AudioDSPDriver = driver;
+            state.AudioDSPParameters = parameters;
         }
 
         internal static AnimationClip GetAnimationClip(
