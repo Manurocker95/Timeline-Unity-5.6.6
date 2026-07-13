@@ -635,12 +635,43 @@ namespace UnityEngine.Playables
             GraphState state = GetGraphOrThrow(graph);
             state.IsPlaying = true;
             state.IsDone = false;
+
+            long[] playableIds = new long[state.Playables.Count];
+            state.Playables.CopyTo(playableIds);
+
+            for (int i = 0; i < playableIds.Length; ++i)
+            {
+                PlayableState playableState;
+                if (!s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
+                    continue;
+                }
+
+                if (!playableState.IsDone)
+                    playableState.PlayState = PlayState.Playing;
+            }
         }
 
         internal static void Stop(PlayableGraph graph)
         {
             GraphState state = GetGraphOrThrow(graph);
             state.IsPlaying = false;
+
+            long[] playableIds = new long[state.Playables.Count];
+            state.Playables.CopyTo(playableIds);
+
+            for (int i = 0; i < playableIds.Length; ++i)
+            {
+                PlayableState playableState;
+                if (s_Playables.TryGetValue(
+                    playableIds[i],
+                    out playableState))
+                {
+                    playableState.PlayState = PlayState.Paused;
+                }
+            }
         }
 
         internal static int GetPlayableCount(PlayableGraph graph)
@@ -689,6 +720,239 @@ namespace UnityEngine.Playables
             }
 
             state.IsDone = hasPlayable && allDone;
+
+            EvaluateAnimationOutputs(state);
+        }
+
+        private struct AnimationSampleCandidate
+        {
+            internal bool IsValid;
+            internal long PlayableId;
+            internal AnimationClip Clip;
+            internal double Time;
+            internal float Weight;
+            internal Vector3 PositionOffset;
+            internal Quaternion RotationOffset;
+        }
+
+        private static void EvaluateAnimationOutputs(
+            GraphState graphState)
+        {
+            if (graphState.Outputs.Count == 0)
+                return;
+
+            long[] outputIds = new long[graphState.Outputs.Count];
+            graphState.Outputs.CopyTo(outputIds);
+            Array.Sort(outputIds);
+
+            for (int i = 0; i < outputIds.Length; ++i)
+            {
+                OutputState outputState;
+                if (!s_Outputs.TryGetValue(
+                    outputIds[i],
+                    out outputState))
+                {
+                    continue;
+                }
+
+                if (outputState.Kind != OutputKind.Animation)
+                    continue;
+
+                if (outputState.Weight <= 0f)
+                    continue;
+
+                Animator animator =
+                    outputState.ReferenceObject as Animator;
+
+                if (animator == null)
+                    continue;
+
+                if (!outputState.SourcePlayable.IsValid())
+                    continue;
+
+                AnimationSampleCandidate candidate =
+                    default(AnimationSampleCandidate);
+
+                HashSet<long> visited = new HashSet<long>();
+
+                FindBestAnimationSample(
+                    graphState,
+                    outputState.SourcePlayable.m_Handle.ToInt64(),
+                    outputState.Weight,
+                    Vector3.zero,
+                    Quaternion.identity,
+                    visited,
+                    ref candidate);
+
+                if (!candidate.IsValid || candidate.Clip == null)
+                    continue;
+
+                float sampleTime = ResolveAnimationSampleTime(
+                    candidate.Clip,
+                    candidate.Time);
+
+                candidate.Clip.SampleAnimation(
+                    animator.gameObject,
+                    sampleTime);
+
+                if (candidate.PositionOffset != Vector3.zero)
+                {
+                    animator.transform.localPosition +=
+                        candidate.PositionOffset;
+                }
+
+                if (candidate.RotationOffset != Quaternion.identity)
+                {
+                    animator.transform.localRotation =
+                        candidate.RotationOffset *
+                        animator.transform.localRotation;
+                }
+            }
+        }
+
+        private static void FindBestAnimationSample(
+            GraphState graphState,
+            long playableId,
+            float inheritedWeight,
+            Vector3 inheritedPositionOffset,
+            Quaternion inheritedRotationOffset,
+            HashSet<long> visited,
+            ref AnimationSampleCandidate best)
+        {
+            if (playableId == 0 || inheritedWeight <= 0f)
+                return;
+
+            if (!visited.Add(playableId))
+                return;
+
+            PlayableState playableState;
+            if (!s_Playables.TryGetValue(
+                playableId,
+                out playableState))
+            {
+                return;
+            }
+
+            Vector3 positionOffset = inheritedPositionOffset;
+            Quaternion rotationOffset = inheritedRotationOffset;
+
+            if (playableState.PlayableType ==
+                typeof(AnimationOffsetPlayable))
+            {
+                positionOffset +=
+                    playableState.AnimationOffsetPosition;
+
+                rotationOffset =
+                    playableState.AnimationOffsetRotation *
+                    rotationOffset;
+            }
+
+            if (playableState.AnimationClip != null)
+            {
+                if (!best.IsValid ||
+                    inheritedWeight > best.Weight)
+                {
+                    best.IsValid = true;
+                    best.PlayableId = playableId;
+                    best.Clip = playableState.AnimationClip;
+                    best.Time = playableState.Time;
+                    best.Weight = inheritedWeight;
+                    best.PositionOffset = positionOffset;
+                    best.RotationOffset = rotationOffset;
+                }
+
+                return;
+            }
+
+            List<ConnectionKey> inputs =
+                new List<ConnectionKey>();
+
+            foreach (
+                KeyValuePair<ConnectionKey, ConnectionState> pair
+                in graphState.Connections)
+            {
+                if (pair.Key.DestinationId == playableId)
+                    inputs.Add(pair.Key);
+            }
+
+            inputs.Sort(
+                delegate (ConnectionKey left, ConnectionKey right)
+                {
+                    return left.InputPort.CompareTo(right.InputPort);
+                });
+
+            if (inputs.Count == 0)
+                return;
+
+            float totalWeight = 0f;
+
+            if (playableState.AnimationMixerNormalizeWeights)
+            {
+                for (int i = 0; i < inputs.Count; ++i)
+                {
+                    float inputWeight;
+                    if (!playableState.InputWeights.TryGetValue(
+                        inputs[i].InputPort,
+                        out inputWeight))
+                    {
+                        inputWeight = 1f;
+                    }
+
+                    if (inputWeight > 0f)
+                        totalWeight += inputWeight;
+                }
+            }
+
+            for (int i = 0; i < inputs.Count; ++i)
+            {
+                ConnectionKey key = inputs[i];
+                ConnectionState connection;
+
+                if (!graphState.Connections.TryGetValue(
+                    key,
+                    out connection))
+                {
+                    continue;
+                }
+
+                float inputWeight;
+                if (!playableState.InputWeights.TryGetValue(
+                    key.InputPort,
+                    out inputWeight))
+                {
+                    inputWeight = 1f;
+                }
+
+                if (playableState.AnimationMixerNormalizeWeights &&
+                    totalWeight > 0f)
+                {
+                    inputWeight /= totalWeight;
+                }
+
+                FindBestAnimationSample(
+                    graphState,
+                    connection.SourceId,
+                    inheritedWeight * inputWeight,
+                    positionOffset,
+                    rotationOffset,
+                    visited,
+                    ref best);
+            }
+        }
+
+        private static float ResolveAnimationSampleTime(
+            AnimationClip clip,
+            double playableTime)
+        {
+            if (clip == null || clip.length <= 0f)
+                return 0f;
+
+            float time = (float)playableTime;
+
+            if (clip.isLooping)
+                return Mathf.Repeat(time, clip.length);
+
+            return Mathf.Clamp(time, 0f, clip.length);
         }
 
         internal static void DestroyGraph(ref PlayableGraph graph)
